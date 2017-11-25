@@ -1,56 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?fileVersion 4.0.0?><cproject>
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
-		<cconfiguration id="0.876190861.1781733102.485851044">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.876190861.1781733102.485851044" moduleId="org.eclipse.cdt.core.settings" name="Light_DimmableLight">
-				<externalSettings/>
-				<extensions>
-					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
-					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
-				</extensions>
-			</storageModule>
-			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="JN-AN-1133-ZigBee-Pro-Lightswitch" buildProperties="" description="DriverBulb_JN516X_White" id="0.876190861.1781733102.485851044" name="Light_DimmableLight" parent="org.eclipse.cdt.build.core.prefbase.cfg">
-					<folderInfo id="0.876190861.1781733102.485851044." name="/" resourcePath="">
-						<toolChain id="com.beyondsemi.toolchain.gnu.ba.elf.base.622423244" name="BA ELF GNU toolchain" superClass="com.beyondsemi.toolchain.gnu.ba.elf.base">
-							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF" id="com.beyondsemi.target.gnu.platform.ba.elf.2086470325" superClass="com.beyondsemi.target.gnu.platform.ba.elf"/>
-							<builder arguments="LIGHT=Light_DimmableLight OTA=0 JENNIC_CHIP=JN5168 RGB=0" autoBuildTarget="all" buildPath="${ProjDirPath}/Common_Light/Build/ " cleanBuildTarget="clean" command="make" enableAutoBuild="false" enableCleanBuild="true" enabledIncrementalBuild="true" id="com.beyondsemi.builder.cdt.gnu.1335210811" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="com.beyondsemi.builder.cdt.gnu"/>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.compiler.c.base.1922993733" name="BA ELF GNU C compiler" superClass="com.beyondsemi.tool.gnu.ba.elf.compiler.c.base">
-								<option id="gnu.c.compiler.option.include.paths.842602994" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;C:\NXP2\bstudio_nxp\sdk\JN-SW-4168\Components\Common\Include&quot;"/>
-								</option>
-								<inputType id="com.beyondsemi.base.ba.elf.c.compiler.input.1449865702" superClass="com.beyondsemi.base.ba.elf.c.compiler.input"/>
-								<inputType id="com.beyondsemi.assembler.macro.input.1255463343" superClass="com.beyondsemi.assembler.macro.input"/>
-							</tool>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.compiler.cpp.base.1439082071" name="BA ELF GNU C++ compiler" superClass="com.beyondsemi.tool.gnu.ba.elf.compiler.cpp.base"/>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.linker.c.base.1839737952" name="BA ELF GNU C linker" superClass="com.beyondsemi.tool.gnu.ba.elf.linker.c.base">
-								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1734436769" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
-									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
-									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
-								</inputType>
-							</tool>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.linker.cpp.base.503893388" name="BA ELF GNU C++ linker" superClass="com.beyondsemi.tool.gnu.ba.elf.linker.cpp.base"/>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.assembler.base.1607353207" name="BA ELF GNU assembler" superClass="com.beyondsemi.tool.gnu.ba.elf.assembler.base">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.351606400" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-								<inputType id="com.beyondsemi.assembler.input.1209621882" superClass="com.beyondsemi.assembler.input"/>
-							</tool>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.archiver.base.1994209035" name="BA ELF GNU archiver" superClass="com.beyondsemi.tool.gnu.ba.elf.archiver.base"/>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.size.base.1159201435" name="BA ELF GNU size" superClass="com.beyondsemi.tool.gnu.ba.elf.size.base"/>
-							<tool id="com.beyondsemi.tool.gnu.ba.elf.objcopy.base.819276696" name="BA ELF GNU objcopy" superClass="com.beyondsemi.tool.gnu.ba.elf.objcopy.base"/>
-						</toolChain>
-					</folderInfo>
-				</configuration>
-			</storageModule>
-			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
-			<storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
-			<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
-		</cconfiguration>
 		<cconfiguration id="0.876190861.1781733102.1301452172.2117801952">
-			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.876190861.1781733102.1301452172.2117801952" moduleId="org.eclipse.cdt.core.settings" name="Light_ColorLight">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="0.876190861.1781733102.1301452172.2117801952" moduleId="org.eclipse.cdt.core.settings" name="Light_MultiLight">
 				<externalSettings/>
 				<extensions>
 					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
@@ -62,11 +14,11 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="JN-AN-1133-ZigBee-Pro-Lightswitch" buildProperties="" description="DriverBulb_JN56X_RGB" id="0.876190861.1781733102.1301452172.2117801952" name="Light_ColorLight" parent="org.eclipse.cdt.build.core.prefbase.cfg">
+				<configuration artifactName="JN-AN-1133-ZigBee-Pro-Lightswitch" buildProperties="" description="DriverBulb_JN56X_RGB" id="0.876190861.1781733102.1301452172.2117801952" name="Light_MultiLight" parent="org.eclipse.cdt.build.core.prefbase.cfg">
 					<folderInfo id="0.876190861.1781733102.1301452172.2117801952." name="/" resourcePath="">
 						<toolChain id="com.beyondsemi.toolchain.gnu.ba.elf.base.1688847601" name="BA ELF GNU toolchain" superClass="com.beyondsemi.toolchain.gnu.ba.elf.base">
 							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF" id="com.beyondsemi.target.gnu.platform.ba.elf.1685006846" superClass="com.beyondsemi.target.gnu.platform.ba.elf"/>
-							<builder arguments="LIGHT=Light_ColorLight OTA=0 JENNIC_CHIP=JN5168 RGB=1" autoBuildTarget="all" buildPath="${ProjDirPath}/Common_Light/Build/ " cleanBuildTarget="clean" command="make" enableAutoBuild="false" enableCleanBuild="true" enabledIncrementalBuild="true" id="com.beyondsemi.builder.cdt.gnu.1375480072" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="com.beyondsemi.builder.cdt.gnu"/>
+							<builder arguments="LIGHT=MultiLight OTA=0 JENNIC_CHIP=JN5168 RGB=1" autoBuildTarget="all" buildPath="${ProjDirPath}/Common_Light/Build/ " cleanBuildTarget="clean" command="make" enableAutoBuild="false" enableCleanBuild="true" enabledIncrementalBuild="true" id="com.beyondsemi.builder.cdt.gnu.1375480072" incrementalBuildTarget="all" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="com.beyondsemi.builder.cdt.gnu"/>
 							<tool id="com.beyondsemi.tool.gnu.ba.elf.compiler.c.base.73389830" name="BA ELF GNU C compiler" superClass="com.beyondsemi.tool.gnu.ba.elf.compiler.c.base">
 								<option id="gnu.c.compiler.option.include.paths.264076444" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;C:\NXP2\bstudio_nxp\sdk\JN-SW-4168\Components\Common\Include&quot;"/>
@@ -126,11 +78,11 @@
 		<configuration configurationName="Controller_ColourSceneControllerForShows">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
 		</configuration>
-		<configuration configurationName="Light_ColorTemperatureLight_2">
-			<resource resourceType="PROJECT" workspacePath="/ZBProv1.1"/>
-		</configuration>
 		<configuration configurationName="Controller_ColorSceneController">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
+		</configuration>
+		<configuration configurationName="Light_ColorTemperatureLight_2">
+			<resource resourceType="PROJECT" workspacePath="/ZBProv1.1"/>
 		</configuration>
 		<configuration configurationName="Controller_ColorController">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
@@ -143,6 +95,9 @@
 		</configuration>
 		<configuration configurationName="Light_ExtendedColorLight_1173">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
+		</configuration>
+		<configuration configurationName="Light_MultiLight">
+			<resource resourceType="PROJECT" workspacePath="/Custom_ZLL_Lights"/>
 		</configuration>
 		<configuration configurationName="Controller_OnOffSensor">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
@@ -169,10 +124,10 @@
 		<configuration configurationName="Controller_NonColorController">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
 		</configuration>
-		<configuration configurationName="Controller_NonColorSceneController">
+		<configuration configurationName="Light_DimmableLight_SSL2108A">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
 		</configuration>
-		<configuration configurationName="Light_DimmableLight_SSL2108A">
+		<configuration configurationName="Controller_NonColorSceneController">
 			<resource resourceType="PROJECT" workspacePath="/ZSL-Test-App"/>
 		</configuration>
 	</storageModule>
