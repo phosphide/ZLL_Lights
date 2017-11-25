@@ -41,11 +41,7 @@
 
 
 
-#ifdef RGB
-#include "App_Light_ColorLight.h"
-#else
-#include "App_Light_DimmableLight.h"
-#endif
+#include "App_MultiLight.h"
 
 
 /****************************************************************************/

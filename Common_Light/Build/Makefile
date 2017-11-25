@@ -53,7 +53,7 @@ JENNIC_SDK ?= JN-SW-4168
 ###############################################################################
 # Default DK4 development kit target hardware
 
-ifeq ($(TARGET),Light_ColorLight)
+ifeq ($(TARGET),MultiLight)
 CFLAGS  += -DRGB
 DR ?= JN516X_RGB
 else
@@ -223,14 +223,7 @@ ifeq ($(DR), DR1175)
 APPSRC += app_buttons.c
 CFLAGS  += -DBUTTON_MAP_DR1175
 
-ifeq ($(TARGET),Light_ExtendedColorLight)
-CFLAGS += -DRGB
-endif
-ifeq ($(TARGET),Light_ColorLight)
-CFLAGS += -DRGB
-
-endif
-ifeq ($(TARGET),Light_ColorTemperatureLight)
+ifeq ($(TARGET),MultiLight)
 CFLAGS += -DRGB
 endif
 
