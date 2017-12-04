@@ -37,13 +37,22 @@
 #define APP_COLOR_LIGHT_H
 
 #include "colour_light.h"
+#include "dimmable_light.h"
 #include "commission_endpoint.h"
+
+/****************************************************************************/
+/***        Constants                                                     ***/
+/****************************************************************************/
+
+#define NUM_MONO_LIGHTS		3
+#define NUM_RGB_LIGHTS		3
 
 /****************************************************************************/
 /***        External Variables                                            ***/
 /****************************************************************************/
 
-extern tsZLL_ColourLightDevice sLight;
+extern tsZLL_DimmableLightDevice sLightMono[NUM_MONO_LIGHTS];
+extern tsZLL_ColourLightDevice sLightRGB[NUM_RGB_LIGHTS];
 extern tsCLD_ZllDeviceTable sDeviceTable;
 
 /****************************************************************************/

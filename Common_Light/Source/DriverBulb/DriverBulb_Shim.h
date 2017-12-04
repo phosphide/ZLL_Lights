@@ -58,6 +58,8 @@
 PUBLIC void vBULB_Init(void);
 PUBLIC void vBULB_SetOnOff(bool_t bOn);
 PUBLIC void vBULB_SetLevel(uint32 u32Level);
+PUBLIC void vBULB_SetColour(uint32 u32Red, uint32 u32Green, uint32 u32Blue);
+PUBLIC void vBULB_SetColourTemperature(uint32 u32ColTemp);
 
 
 /****************************************************************************/

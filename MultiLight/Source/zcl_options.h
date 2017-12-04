@@ -64,8 +64,8 @@ PUBLIC void vLoadScenesNVM(void);
 //#define ZLL_NO_APS_ACK
 
 /* Sets the number of endpoints that will be created by the ZCL library */
-#define ZLL_NUMBER_OF_ENDPOINTS                             10
-#define ZLL_NUMBER_DEVICES                                  1
+#define ZLL_NUMBER_OF_ENDPOINTS                             8
+#define ZLL_NUMBER_DEVICES                                  6
 
 #define ZLL_MANUFACTURER_CODE                                0x1037
 
@@ -76,7 +76,7 @@ PUBLIC void vLoadScenesNVM(void);
 
 #define ZLL_NUMBER_OF_ZCL_APPLICATION_TIMERS                 3
 
-#define NUM_ENDPOINT_RECORDS         1
+#define NUM_ENDPOINT_RECORDS         6
 #define NUM_GROUP_RECORDS            4
 
 
@@ -113,7 +113,7 @@ PUBLIC void vLoadScenesNVM(void);
 
 #define CLD_SCENES
 #define SCENES_SERVER
-#define CLD_SCENES_MAX_NUMBER_OF_SCENES                     9
+#define CLD_SCENES_MAX_NUMBER_OF_SCENES                     4
 #define CLD_SCENES_DISABLE_NAME_SUPPORT
 #define CLD_SCENES_MAX_SCENE_NAME_LENGTH                    0
 #define CLD_SCENES_MAX_SCENE_STORAGE_BYTES                  22

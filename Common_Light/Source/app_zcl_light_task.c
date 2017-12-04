@@ -152,6 +152,8 @@ PUBLIC void* psGetDeviceTable(void) {
 PUBLIC void APP_ZCL_vInitialise(void)
 {
     teZCL_Status eZCL_Status;
+    unsigned int i;
+
     /* Initialise ZLL */
     eZCL_Status = eZLL_Initialise(&APP_ZCL_cbGeneralCallback, apduZCL);
     if (eZCL_Status != E_ZCL_SUCCESS)
@@ -162,7 +164,10 @@ PUBLIC void APP_ZCL_vInitialise(void)
     /* Start the tick timer */
     OS_eStartSWTimer(APP_TickTimer, ZCL_TICK_TIME, NULL);
 
-    sDeviceTable.asDeviceRecords[0].u64IEEEAddr = *((uint64*)pvAppApiGetMacAddrLocation());
+    for (i = 0; i < sDeviceTable.u8NumberDevices; i++)
+    {
+    	sDeviceTable.asDeviceRecords[i].u64IEEEAddr = *((uint64*)pvAppApiGetMacAddrLocation());
+    }
 
     /* Register Commission EndPoint */
     eZCL_Status = eApp_ZLL_RegisterEndpoint(&APP_ZCL_cbEndpointCallback,&sCommissionEndpoint);
@@ -172,14 +177,29 @@ PUBLIC void APP_ZCL_vInitialise(void)
     }
 
 #ifdef CLD_COLOUR_CONTROL
-    DBG_vPrintf(TRACE_LIGHT_TASK, "Capabilities %04x\n", sLight.sColourControlServerCluster.u16ColourCapabilities);
+    // TODO: do for all lights
+    //DBG_vPrintf(TRACE_LIGHT_TASK, "Capabilities %04x\n", sLight.sColourControlServerCluster.u16ColourCapabilities);
 #endif
 
     #ifdef CLD_LEVEL_CONTROL
-        sLight.sLevelControlServerCluster.u8CurrentLevel = 0xFE;
+    	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+    	{
+    		sLightMono[i].sLevelControlServerCluster.u8CurrentLevel = 0xFE;
+    	}
+    	for (i = 0; i < NUM_RGB_LIGHTS; i++)
+		{
+			sLightRGB[i].sLevelControlServerCluster.u8CurrentLevel = 0xFE;
+		}
     #endif
 
-    sLight.sOnOffServerCluster.bOnOff = TRUE;
+	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	{
+		sLightMono[i].sOnOffServerCluster.bOnOff = TRUE;
+	}
+	for (i = 0; i < NUM_RGB_LIGHTS; i++)
+	{
+		sLightRGB[i].sOnOffServerCluster.bOnOff = TRUE;
+	}
 
     vAPP_ZCL_DeviceSpecific_Init();
 
@@ -203,7 +223,16 @@ PUBLIC void APP_ZCL_vInitialise(void)
  ****************************************************************************/
 PUBLIC void APP_ZCL_vSetIdentifyTime(uint16 u16Time)
 {
-    sLight.sIdentifyServerCluster.u16IdentifyTime = u16Time;
+	unsigned int i;
+
+	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	{
+		sLightMono[i].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+	}
+	for (i = 0; i < NUM_RGB_LIGHTS; i++)
+	{
+		sLightRGB[i].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+	}
 }
 
 /****************************************************************************
@@ -471,8 +500,9 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                                         sLight.sOnOffServerCluster.u16OffWaitTime);
 #endif
 
-                    vRGBLight_SetLevels(sLight.sOnOffServerCluster.bOnOff,
-                            sLight.sLevelControlServerCluster.u8CurrentLevel,
+                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
+                    vRGBLight_SetLevels(sLightRGB[0].sOnOffServerCluster.bOnOff,
+                    		sLightRGB[0].sLevelControlServerCluster.u8CurrentLevel,
                             u8Red,
                             u8Green,
                             u8Blue);
@@ -489,7 +519,8 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                 #elif (defined MONO_WITH_LEVEL)
 
                     /* Dimmable monochrome lamps */
-                    vSetBulbState(sLight.sOnOffServerCluster.bOnOff, sLight.sLevelControlServerCluster.u8CurrentLevel);
+                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
+                    //vSetBulbState(sLightMono[0].sOnOffServerCluster.bOnOff, sLightMono[0].sLevelControlServerCluster.u8CurrentLevel);
                 #elif (defined MONO_ON_OFF)
                     /*
                      * Bulb with onoff only
@@ -507,7 +538,8 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                     vStartEffect(psCallBackMessage->uMessage.psTriggerEffectRequestPayload->eEffectId);
                 } else if (psCallBackMessage->u8CommandId == E_CLD_IDENTIFY_CMD_IDENTIFY) {
                     DBG_vPrintf(TRACE_PATH, "\nJP E_CLD_IDENTIFY_CMD_IDENTIFY");
-                    APP_vHandleIdentify(sLight.sIdentifyServerCluster.u16IdentifyTime);
+                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
+                    APP_vHandleIdentify(sLightRGB[0].sIdentifyServerCluster.u16IdentifyTime);
                 }
             }
             break;
@@ -536,11 +568,13 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
         }
         else if (psEvent->psClusterInstance->psClusterDefinition->u16ClusterEnum == GENERAL_CLUSTER_ID_IDENTIFY)
         {
-            APP_vHandleIdentify(sLight.sIdentifyServerCluster.u16IdentifyTime);
+        	// TODO: refer to correct sLight based on psEvent->u8EndPoint
+            APP_vHandleIdentify(sLightRGB[0].sIdentifyServerCluster.u16IdentifyTime);
         }
         else
         {
-            if (sLight.sIdentifyServerCluster.u16IdentifyTime == 0) {
+        	// TODO: refer to correct sLight based on psEvent->u8EndPoint
+            if (sLightRGB[0].sIdentifyServerCluster.u16IdentifyTime == 0) {
                 /*
                  * If not identifying then do the light
                  */
@@ -571,8 +605,9 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                                         sLight.sOnOffServerCluster.u16OnTime,
                                         sLight.sOnOffServerCluster.u16OffWaitTime);
 #endif
-                    vRGBLight_SetLevels(sLight.sOnOffServerCluster.bOnOff,
-                        sLight.sLevelControlServerCluster.u8CurrentLevel,
+                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
+                    vRGBLight_SetLevels(sLightRGB[0].sOnOffServerCluster.bOnOff,
+                    	sLightRGB[0].sLevelControlServerCluster.u8CurrentLevel,
                         u8Red,
                         u8Green,
                         u8Blue);
@@ -591,7 +626,8 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                     /*
                      * Monochrome bulb with level control
                      */
-                    vSetBulbState(sLight.sOnOffServerCluster.bOnOff, sLight.sLevelControlServerCluster.u8CurrentLevel);
+                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
+                    //vSetBulbState(sLightMono[0].sOnOffServerCluster.bOnOff, sLightMono[0].sLevelControlServerCluster.u8CurrentLevel);
 
                 #elif (defined MONO_ON_OFF)
                     /*
