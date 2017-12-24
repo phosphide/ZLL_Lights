@@ -46,7 +46,7 @@
 #include <string.h>
 
 #include "app_light_interpolation.h"
-#include "DriverBulb_Shim.h"
+#include "DriverBulb.h"
 
 
 
@@ -215,7 +215,8 @@ PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep)
  * To get RGB value
  *
  * PARAMETER
- * Type                   Name                    Descirption
+ * Type                   Name                    Description
+ * uint8                  u8Endpoint              Endpoint to query
  * uint8 *                pu8Red                  Pointer to Red in RGB value
  * uint8 *                pu8Green                Pointer to Green in RGB value
  * uint8 *                pu8Blue                 Pointer to Blue in RGB value
@@ -224,9 +225,9 @@ PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep)
  * teZCL_Status
  *
  ****************************************************************************/
-PUBLIC void vApp_eCLD_ColourControl_GetRGB(uint8 *pu8Red,uint8 *pu8Green,uint8 *pu8Blue)
+PUBLIC void vApp_eCLD_ColourControl_GetRGB(uint8 u8Endpoint,uint8 *pu8Red,uint8 *pu8Green,uint8 *pu8Blue)
 {
-    eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT,
+    eCLD_ColourControl_GetRGB(u8Endpoint,
                               pu8Red,
                               pu8Green,
                               pu8Blue);
@@ -299,7 +300,7 @@ PUBLIC void APP_vHandleIdentify(uint16 u16Time) {
 
         // TODO: do this for all lights
 
-        vApp_eCLD_ColourControl_GetRGB(&u8Red, &u8Green, &u8Blue);
+        vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT, &u8Red, &u8Green, &u8Blue);
 
         //DBG_vPrintf(TRACE_LIGHT_TASK, "R %d G %d B %d L %d Hue %d Sat %d\n", u8Red, u8Green, u8Blue,
         //                    sLight.sLevelControlServerCluster.u8CurrentLevel,
@@ -395,7 +396,7 @@ PUBLIC void vIdEffectTick(uint8 u8Endpoint) {
             sIdEffect.bDirection = FALSE;
             APP_ZCL_vSetIdentifyTime(0);
                 uint8 u8Red, u8Green, u8Blue;
-                vApp_eCLD_ColourControl_GetRGB(&u8Red, &u8Green, &u8Blue);
+                vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT, &u8Red, &u8Green, &u8Blue);
                 //DBG_vPrintf(TRACE_LIGHT_TASK, "EF - R %d G %d B %d L %d Hue %d Sat %d\n",
                 //                    u8Red,
                 //                    u8Green,
@@ -505,7 +506,7 @@ PUBLIC void vRGBLight_SetLevels(bool_t bOn, uint8 u8Level, uint8 u8Red, uint8 u8
     {
         vLI_Stop();
     }
-    vBULB_SetOnOff(bOn);
+    DriverBulb_vSetOnOff(0, bOn);
 }
 
 /****************************************************************/

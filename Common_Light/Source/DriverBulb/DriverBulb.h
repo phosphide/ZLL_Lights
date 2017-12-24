@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * MODULE              AN1166 Smart Lamp Drivers
+ * MODULE              Generic interface to bulb hardware
  *
  * DESCRIPTION         Driver Public Interface
  *
@@ -57,29 +57,13 @@ enum {E_RED_PWM,E_GREEN_PWM,E_BLUE_PWM};
 
 /* Mandatory Interface functions */
 PUBLIC void 		DriverBulb_vInit(void);
-PUBLIC void 		DriverBulb_vOn(void);
-PUBLIC void 		DriverBulb_vOff(void);
-PUBLIC bool_t		DriverBulb_bOn(void);
+PUBLIC void 		DriverBulb_vOn(uint8 u8Bulb);
+PUBLIC void 		DriverBulb_vOff(uint8 u8Bulb);
+PUBLIC bool_t		DriverBulb_bOn(uint8 u8Bulb);
 
-PUBLIC void 	 	DriverBulb_vSetLevel(uint32 u32Level);
-PUBLIC void         DriverBulb_vSetOnOff(bool_t bOn);
-PUBLIC void         DriverBulb_vSetColour(uint32 u32Red, uint32 u32Green, uint32 u32Blue)__attribute__((weak));
-
-/* Optional Interface Functions                        */
-/* Stub out in implementation if no behaviour required */
-PUBLIC bool_t 	 	DriverBulb_bReady(void);
-PUBLIC int16 		DriverBulb_i16Analogue(uint8 u8Adc, uint16 u16AdcRead);
-PUBLIC void			DriverBulb_vCbSetLevel(uint8 u8Level);
-
-/* No need to stub these out -only DR1192/DR1221 build variants support these */
-PUBLIC void         DriverBulb_vSetBalance(uint8 u8Balance)__attribute__((weak));
-PUBLIC void         DriverBulb_vSetTunableWhiteColourTemperature(int32 i32ColourTemperature)__attribute__((weak));
-PUBLIC void         DriverBulb_vGetColourTempPhyMinMax(uint16 *pu16PhyMin, uint16 *pu16PhyMax)__attribute__((weak));
-
-/* Auxillary interface for DR1223 (AAL RGB) */
-PUBLIC uint16 DriverBulb_u16GetAdcValue(uint32 u32ChannelId)__attribute__((weak));
-PUBLIC void DriverBulb_vSet12BitColour(uint32 u32Red, uint32 u32Green, uint32 u32Blue)__attribute__((weak));
-
+PUBLIC void 	 	DriverBulb_vSetLevel(uint8 u8Bulb, uint32 u32Level);
+PUBLIC void         DriverBulb_vSetOnOff(uint8 u8Bulb, bool_t bOn);
+PUBLIC void         DriverBulb_vSetColour(uint8 u8Bulb, uint32 u32Red, uint32 u32Green, uint32 u32Blue);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/

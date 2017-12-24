@@ -63,7 +63,7 @@
 #include "app_common.h"
 #include "app_light_interpolation.h"
 
-#include "DriverBulb_Shim.h"
+#include "DriverBulb.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -185,11 +185,11 @@ PUBLIC void vAppMain(void)
     bAHI_SetClockRate(3); /* Move CPU to 32 MHz  vAHI_OptimiseWaitStates automatically called */
 #endif
 
-     DBG_vUartInit(DBG_E_UART_0, DBG_E_UART_BAUD_RATE_115200);
+     DBG_vUartInit(DBG_E_UART_0, DBG_E_UART_BAUD_RATE_38400);
 
     /* Early call to Bulb initialisation to enable fast start up    */
 
-    vBULB_Init();
+     DriverBulb_vInit();
 
     /* Bulb is now on 100% white (RGB or Mono) so ensure the LI     */
     /*  module's values are consistent with this initial state      */
@@ -198,10 +198,6 @@ PUBLIC void vAppMain(void)
 #endif
 
     g_u8ZpsExpiryMaxCount = 1;
-    /* Initialise the debug diagnostics module to use UART0 at 115K Baud;
-     * Do not use UART 1 if LEDs are used, as it shares DIO with the LEDS
-     */
-
 
     /*
      * Initialise the stack overflow exception to trigger if the end of the
@@ -291,10 +287,10 @@ void vAppRegisterPWRMCallbacks(void)
  ****************************************************************************/
 PRIVATE void vInitialiseApp(void)
 {
-    /* Initialise the debug diagnostics module to use UART0 at 115K Baud;
+    /* Initialise the debug diagnostics module to use UART0 at 38.4K Baud;
      * Do not use UART 1 if LEDs are used, as it shares DIO with the LEDS
      */
-    DBG_vUartInit(DBG_E_UART_0, DBG_E_UART_BAUD_RATE_115200);
+    DBG_vUartInit(DBG_E_UART_0, DBG_E_UART_BAUD_RATE_38400);
 
     /* Initialise JenOS modules. Initialise Power Manager even on non-sleeping nodes
      * as it allows the device to doze when in the idle task

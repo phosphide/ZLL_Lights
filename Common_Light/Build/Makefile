@@ -60,7 +60,7 @@ else
 DR ?= JN516X_WHITE
 endif
 
-$(info Target: $(TARGET), DriverBulb_$(DR).c)
+$(info Target: $(TARGET), DriverBulb_PCA9685.c)
 
 ifeq ($(DR), DR1175)
 JENNIC_PCB ?= DEVKIT4
@@ -210,8 +210,7 @@ APPSRC += appZpsBeaconHandler.c
 
 #Light device type and it's associated driver 
 APPSRC += App_$(TARGET).c
-APPSRC += DriverBulb_$(DR).c
-APPSRC += DriverBulb_Shim.c
+APPSRC += DriverBulb_PCA9685.c
 
 CFLAGS +=-D$(DR)
 CFLAGS += -DEMBEDDED
