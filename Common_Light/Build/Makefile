@@ -37,6 +37,9 @@ LIGHT ?= Light_ExtendedColorLight
 TARGET = $(LIGHT)
 PDM_BUILD_TYPE ?=_EEPROM
 
+STACK_SIZE = 4000
+MINIMUM_HEAP_SIZE = 1000
+
 #PDM_BUILD_TYPE ?= _EXTERNAL_FLASH
 
 
@@ -370,7 +373,6 @@ $(DEV_BLD_DIR)/%.o: %.c
 
 $(DEV_BLD_DIR)/$(TARGET)_$(JENNIC_CHIP)$(BIN_SUFFIX).elf: $(APPOBJS) $(addsuffix.a,$(addprefix $(COMPONENTS_BASE_DIR)/Library/lib,$(APPLDLIBS))) 
 	$(info Linking $@ ...)
-	cp -f $(DEV_BLD_DIR)/APP_stack_size_$(JENNIC_CHIP).ld $(APP_BLD_DIR)/APP_stack_size.ld
 	$(CC) -Wl,--gc-sections -Wl,-u_AppColdStart -Wl,-u_AppWarmStart $(LDFLAGS) -TAppBuildZLLHA_$(JENNIC_CHIP).ld -o $@ -Wl,--start-group $(APPOBJS) $(addprefix -l,$(LDLIBS)) -lm -Wl,--end-group -Wl,-Map,$(DEV_BLD_DIR)/$(TARGET)_$(JENNIC_CHIP)$(BIN_SUFFIX).map 
 	$(SIZE) $@ 
 	
