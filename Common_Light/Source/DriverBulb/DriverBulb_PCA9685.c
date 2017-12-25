@@ -38,7 +38,7 @@
 
 #define PCA9685_ADDRESS		(0x40)		/* 7 bit default I2C address of PCA9685 */
 
-#define PWM_MAX				4095
+#define FAST_DIV_BY_255(x)	((((x) << 8) + (x) + 255) >> 16)
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -50,10 +50,10 @@ PRIVATE void PCA9685_vWriteRegister(uint8 u8Reg, uint8 u8Data);
 /***        Local Variables                                               ***/
 /****************************************************************************/
 PRIVATE bool_t  bIsOn[NUM_BULBS];
-PRIVATE uint16  u16CurrLevel[NUM_BULBS];
-PRIVATE uint16  u16CurrRed[NUM_BULBS];
-PRIVATE uint16  u16CurrGreen[NUM_BULBS];
-PRIVATE uint16  u16CurrBlue[NUM_BULBS];
+PRIVATE uint8   u8CurrLevel[NUM_BULBS];
+PRIVATE uint8   u8CurrRed[NUM_BULBS];
+PRIVATE uint8   u8CurrGreen[NUM_BULBS];
+PRIVATE uint8   u8CurrBlue[NUM_BULBS];
 
 /* Map of bulbs to PCA9685 channels. */
 PRIVATE const uint8 u8ChannelMap[NUM_BULBS * 3] = {
@@ -115,10 +115,10 @@ PUBLIC void DriverBulb_vInit(void)
 		for (i = 0; i < NUM_BULBS; i++)
 		{
 			bIsOn[i] = TRUE;
-			u16CurrLevel[i] = PWM_MAX;
-			u16CurrRed[i] = PWM_MAX;
-			u16CurrGreen[i] = PWM_MAX;
-			u16CurrBlue[i] = PWM_MAX;
+			u8CurrLevel[i] = 255;
+			u8CurrRed[i] = 255;
+			u8CurrGreen[i] = 255;
+			u8CurrBlue[i] = 255;
 			/* Set outputs */
 			DriverBulb_vOutput(i);
 		}
@@ -233,10 +233,17 @@ PUBLIC bool_t DriverBulb_bOn(uint8 u8Bulb)
 PUBLIC void DriverBulb_vSetLevel(uint8 u8Bulb, uint32 u32Level)
 {
 	/* Different value ? */
-	if (u16CurrLevel[u8Bulb] != (uint16) u32Level)
+	if (u8CurrLevel[u8Bulb] != (uint8) u32Level)
 	{
 		/* Note the new level */
-		u16CurrLevel[u8Bulb] = (uint16) MAX(1, u32Level);
+		if (u32Level > 255)
+		{
+			u8CurrLevel[u8Bulb] = 255;
+		}
+		else
+		{
+			u8CurrLevel[u8Bulb] = (uint8) MAX(1, u32Level);
+		}
 		/* Is the lamp on ? */
 		if (bIsOn[u8Bulb])
 		{
@@ -266,14 +273,14 @@ PUBLIC void DriverBulb_vSetLevel(uint8 u8Bulb, uint32 u32Level)
 PUBLIC void DriverBulb_vSetColour(uint8 u8Bulb, uint32 u32Red, uint32 u32Green, uint32 u32Blue)
 {
 	/* Different value ? */
-	if (u16CurrRed[u8Bulb] != (uint8) u32Red
-			|| u16CurrGreen[u8Bulb] != (uint8) u32Green
-			|| u16CurrBlue[u8Bulb] != (uint8) u32Blue)
+	if ((u8CurrRed[u8Bulb] != (uint8) u32Red)
+	 || (u8CurrGreen[u8Bulb] != (uint8) u32Green)
+	 || (u8CurrBlue[u8Bulb] != (uint8) u32Blue))
 	{
 		/* Note the new values */
-		u16CurrRed[u8Bulb]   = (uint8) u32Red;
-		u16CurrGreen[u8Bulb] = (uint8) u32Green;
-		u16CurrBlue[u8Bulb]  = (uint8) u32Blue;
+		u8CurrRed[u8Bulb]   = (uint8) MIN(u32Red, 255);
+		u8CurrGreen[u8Bulb] = (uint8) MIN(u32Green, 255);
+		u8CurrBlue[u8Bulb]  = (uint8) MIN(u32Blue, 255);
 		/* Is the lamp on ? */
 		if (bIsOn[u8Bulb])
 		{
@@ -302,8 +309,9 @@ PUBLIC void DriverBulb_vSetColour(uint8 u8Bulb, uint32 u32Red, uint32 u32Green, 
  ****************************************************************************/
 PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 {
-
-	uint16  u16Brightness[3];
+	uint32  v;
+	uint16  u16PWM;
+	uint8   u8Brightness[3];
 	int8    i;
 	uint8   u8Channel;
 	uint8   u8NumChannels;
@@ -318,28 +326,32 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 		if (bIsRGB)
 		{
 			/* Scale colour for brightness level */
-			u16Brightness[0] = (uint16)(((uint32)u16CurrRed[u8Bulb]   * (uint32)u16CurrLevel[u8Bulb]) / (uint32)PWM_MAX);
-			u16Brightness[1] = (uint16)(((uint32)u16CurrGreen[u8Bulb] * (uint32)u16CurrLevel[u8Bulb]) / (uint32)PWM_MAX);
-			u16Brightness[2] = (uint16)(((uint32)u16CurrBlue[u8Bulb]  * (uint32)u16CurrLevel[u8Bulb]) / (uint32)PWM_MAX);
+			v = (uint32)u8CurrRed[u8Bulb] * (uint32)u8CurrLevel[u8Bulb];
+			u8Brightness[0] = (uint8)FAST_DIV_BY_255(v);
+			v = (uint32)u8CurrGreen[u8Bulb] * (uint32)u8CurrLevel[u8Bulb];
+			u8Brightness[1] = (uint8)FAST_DIV_BY_255(v);
+			v = (uint32)u8CurrBlue[u8Bulb] * (uint32)u8CurrLevel[u8Bulb];
+			u8Brightness[2] = (uint8)FAST_DIV_BY_255(v);
 		}
 		else
 		{
-			u16Brightness[0] = u16CurrLevel[u8Bulb];
+			u8Brightness[0] = u8CurrLevel[u8Bulb];
 		}
 
 		for (i = 0; i < u8NumChannels; i++)
 		{
 			/* Don't allow fully off */
-			if (u16Brightness[i] == 0) u16Brightness[i] = 1;
+			if (u8Brightness[i] == 0) u8Brightness[i] = 1;
 			/* Determine which channel of PCA9685 to adjust */
 			u8Channel = u8ChannelMap[u8Bulb * 3 + i];
 			/* Set PWM duty cycle */
+			u16PWM = (uint16)u8Brightness[i] << 4;
 			/* TODO: add channel-dependent offset to ON/OFF times so that power supply
 			 * isn't hammered at count = 0. */
 			PCA9685_vWriteRegister(REG_LEDx_ON_L + u8Channel * REG_LEDx_STRIDE, 0x00);
 			PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x00);
-			PCA9685_vWriteRegister(REG_LEDx_OFF_L + u8Channel * REG_LEDx_STRIDE, (uint8_t)u16Brightness[i]);
-			PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, (uint8_t)((u16Brightness[i] >> 8) & 0x0f));
+			PCA9685_vWriteRegister(REG_LEDx_OFF_L + u8Channel * REG_LEDx_STRIDE, (uint8_t)u16PWM);
+			PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, (uint8_t)((u16PWM >> 8) & 0x0f));
 		}
 	}
 	else /* Turn off */
