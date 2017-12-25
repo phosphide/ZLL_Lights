@@ -71,7 +71,9 @@
 tsZLL_DimmableLightDevice sLightMono[NUM_MONO_LIGHTS];
 tsZLL_ColourLightDevice sLightRGB[NUM_RGB_LIGHTS];
 
-tsIdentifyColour sIdEffect;
+tsIdentifyWhite sIdEffectMono[NUM_MONO_LIGHTS];
+tsIdentifyColour sIdEffectRGB[NUM_RGB_LIGHTS];
+
 tsCLD_ZllDeviceTable sDeviceTable = { ZLL_NUMBER_DEVICES,
                                       {
                                           { 0,
@@ -125,9 +127,15 @@ tsCLD_ZllDeviceTable sDeviceTable = { ZLL_NUMBER_DEVICES,
 };
 
 /****************************************************************************/
+/***        Local Function Prototypes                                     ***/
+/****************************************************************************/
+
+PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep);
+
+/****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
-PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep);
+
 /****************************************************************************
  **
  ** NAME: eApp_ZLL_RegisterEndpoint
@@ -208,6 +216,44 @@ PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep)
 }
 
 /****************************************************************************
+*
+* NAME: vEndPointToNum
+*
+* DESCRIPTION: Convert endpoint number into light index
+*
+*
+* PARAMETER: u8Endpoint is the endpoint number, bIsRGB will be set to TRUE
+* if the endpoint is detected to be an RGB endpoint, otherwise it will be
+* set to FALSE. u8Num will be set to the light index e.g. 0 = first mono or
+* RGB light, 1 = second light etc.
+*
+* RETURNS: TRUE iff u8Endpoint is a valid light endpoint
+*
+****************************************************************************/
+PUBLIC bool_t bEndPointToNum(uint8 u8Endpoint, bool_t* bIsRGB, uint8* u8Num)
+{
+	if ((u8Endpoint >= MULTILIGHT_LIGHT_MONO_1_ENDPOINT)
+	 && (u8Endpoint < (MULTILIGHT_LIGHT_MONO_1_ENDPOINT + NUM_MONO_LIGHTS)))
+	{
+		*bIsRGB = FALSE;
+		*u8Num = u8Endpoint - MULTILIGHT_LIGHT_MONO_1_ENDPOINT;
+		return TRUE;
+	}
+	else if ((u8Endpoint >= MULTILIGHT_LIGHT_RGB_1_ENDPOINT)
+		  && (u8Endpoint < (MULTILIGHT_LIGHT_RGB_1_ENDPOINT + NUM_RGB_LIGHTS)))
+	{
+		*bIsRGB = TRUE;
+		*u8Num = u8Endpoint - MULTILIGHT_LIGHT_RGB_1_ENDPOINT;
+		return TRUE;
+	}
+	else
+	{
+		DBG_vPrintf(TRACE_LIGHT_TASK, "Unknown endpoint in vEndPointToNum %d\n", (int)u8Endpoint);
+		return FALSE;
+	}
+}
+
+/****************************************************************************
  *
  * NAME: vApp_eCLD_ColourControl_GetRGB
  *
@@ -249,13 +295,15 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 {
 	unsigned int i;
 
-    /* Initialise the strings in Basic */
+    /* Initialize the strings in Basic */
 	for (i = 0; i < NUM_MONO_LIGHTS; i++)
 	{
 		memcpy(sLightMono[i].sBasicServerCluster.au8ManufacturerName, "NXP", CLD_BAS_MANUF_NAME_SIZE);
 		memcpy(sLightMono[i].sBasicServerCluster.au8ModelIdentifier, "ZLL-MonoLight   ", CLD_BAS_MODEL_ID_SIZE);
 		memcpy(sLightMono[i].sBasicServerCluster.au8DateCode, "20150212", CLD_BAS_DATE_SIZE);
 		memcpy(sLightMono[i].sBasicServerCluster.au8SWBuildID, "1000-0004", CLD_BAS_SW_BUILD_SIZE);
+		sIdEffectMono[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+		sIdEffectMono[i].u8Tick = 0;
 	}
 	for (i = 0; i < NUM_RGB_LIGHTS; i++)
 	{
@@ -263,10 +311,9 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 		memcpy(sLightRGB[i].sBasicServerCluster.au8ModelIdentifier, "ZLL-ColorLight  ", CLD_BAS_MODEL_ID_SIZE);
 		memcpy(sLightRGB[i].sBasicServerCluster.au8DateCode, "20150212", CLD_BAS_DATE_SIZE);
 		memcpy(sLightRGB[i].sBasicServerCluster.au8SWBuildID, "1000-0004", CLD_BAS_SW_BUILD_SIZE);
+		sIdEffectRGB[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+		sIdEffectRGB[i].u8Tick = 0;
 	}
-
-    sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-    sIdEffect.u8Tick = 0;
 }
 
 /****************************************************************************
@@ -276,51 +323,88 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
  * DESCRIPTION:
  * ZLL Device Specific identify
  *
- * PARAMETER: the identify time
+ * PARAMETER: endpoint to identify
  *
  * RETURNS: void
  *
  ****************************************************************************/
-PUBLIC void APP_vHandleIdentify(uint16 u16Time) {
+PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 
     uint8 u8Red, u8Green, u8Blue;
+    uint8 u8Effect;
+    uint8 u8Index;
+    uint16 u16Time;
+    bool_t bIsRGB;
+
+    if (!bEndPointToNum(u8Endpoint, &bIsRGB, &u8Index))
+    {
+    	return;
+    }
+
+    if (bIsRGB)
+    {
+    	u8Effect = sIdEffectRGB[u8Index].u8Effect;
+    	u16Time = sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime;
+    }
+    else
+    {
+    	u8Effect = sIdEffectMono[u8Index].u8Effect;
+    	u16Time = sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime;
+    }
 
     DBG_vPrintf(TRACE_LIGHT_TASK, "JP Time %d\n", u16Time);
 
-    if (sIdEffect.u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT) {
+    if (u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT) {
         /* do nothing */
-        //DBG_vPrintf(TRACE_LIGHT_TASK, "Efect do nothing\n");
+        //DBG_vPrintf(TRACE_LIGHT_TASK, "Effect do nothing\n");
     }
     else if (u16Time == 0)
     {
-            /*
-             * Restore to off/off/colour state
-             */
+		/*
+		 * Restore to off/off/colour state
+		 */
         DBG_vPrintf(TRACE_PATH, "\nPath 3");
 
-        // TODO: do this for all lights
+        if (bIsRGB)
+        {
+			vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT + u8Index, &u8Red, &u8Green, &u8Blue);
 
-        vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT, &u8Red, &u8Green, &u8Blue);
+			DBG_vPrintf(TRACE_LIGHT_TASK, "R %d G %d B %d L %d Hue %d Sat %d\n", u8Red, u8Green, u8Blue,
+			                    sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+			                    sLightRGB[u8Index].sColourControlServerCluster.u8CurrentHue,
+			                    sLightRGB[u8Index].sColourControlServerCluster.u8CurrentSaturation);
 
-        //DBG_vPrintf(TRACE_LIGHT_TASK, "R %d G %d B %d L %d Hue %d Sat %d\n", u8Red, u8Green, u8Blue,
-        //                    sLight.sLevelControlServerCluster.u8CurrentLevel,
-        //                    sLight.sColourControlServerCluster.u8CurrentHue,
-        //                    sLight.sColourControlServerCluster.u8CurrentSaturation);
+			DBG_vPrintf(TRACE_LIGHT_TASK, "\nidentify stop");
 
-        //DBG_vPrintf(TRACE_LIGHT_TASK, "\nidentify stop");
-
-        //vRGBLight_SetLevels(sLight.sOnOffServerCluster.bOnOff,
-        //                    sLight.sLevelControlServerCluster.u8CurrentLevel,
-        //                    u8Red,
-        //                    u8Green,
-        //                    u8Blue);
+			vRGBLight_SetLevels(BULB_NUM_RGB(u8Index),
+					            sLightRGB[u8Index].sOnOffServerCluster.bOnOff,
+					            sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+			                    u8Red,
+			                    u8Green,
+			                    u8Blue);
+        }
+        else
+        {
+        	vSetBulbState(BULB_NUM_MONO(u8Index),
+						  sLightMono[u8Index].sOnOffServerCluster.bOnOff,
+						  sLightMono[u8Index].sLevelControlServerCluster.u8CurrentLevel);
+        }
     }
     else
-        {
-            /* Set the Identify levels */
-            DBG_vPrintf(TRACE_PATH, "\nPath 4");
-            vRGBLight_SetLevels(TRUE, 159, 250, 0, 0);
-        }
+	{
+		/* Set the Identify levels */
+		DBG_vPrintf(TRACE_PATH, "\nPath 4");
+		if (bIsRGB)
+		{
+			vRGBLight_SetLevels(BULB_NUM_RGB(u8Index), TRUE, 159, 250, 0, 0);
+		}
+		else
+		{
+			sIdEffectMono[u8Index].u8Level = 250;
+			sIdEffectMono[u8Index].u8Count = 5;
+			vSetBulbState(BULB_NUM_MONO(u8Index), TRUE, CLD_LEVELCONTROL_MAX_LEVEL);
+		}
+	}
 }
 
 /****************************************************************************
@@ -337,80 +421,189 @@ PUBLIC void APP_vHandleIdentify(uint16 u16Time) {
  ****************************************************************************/
 PUBLIC void vIdEffectTick(uint8 u8Endpoint) {
 
-    if (u8Endpoint != MULTILIGHT_LIGHT_RGB_1_ENDPOINT) {
-        return;
-    }
+	uint8 u8Index;
+	bool_t bIsRGB;
 
-    // TODO: do this for all lights
+	if (!bEndPointToNum(u8Endpoint, &bIsRGB, &u8Index))
+	{
+		return;
+	}
 
-    if (sIdEffect.u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
+    if (bIsRGB)
     {
-        if (sIdEffect.u8Tick > 0)
-        {
-            DBG_vPrintf(TRACE_PATH, "\nPath 5");
+    	/* Colour light */
 
-            sIdEffect.u8Tick--;
-            /* Set the light parameters */
-            vRGBLight_SetLevels(TRUE, sIdEffect.u8Level,sIdEffect.u8Red,sIdEffect.u8Green,sIdEffect.u8Blue);
-            /* Now adjust parameters ready for for next round */
-            switch (sIdEffect.u8Effect) {
-                case E_CLD_IDENTIFY_EFFECT_BLINK:
-                    break;
+		if (sIdEffectRGB[u8Index].u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
+		{
+			if (sIdEffectRGB[u8Index].u8Tick > 0)
+			{
+				DBG_vPrintf(TRACE_PATH, "\nPath 5");
 
-                case E_CLD_IDENTIFY_EFFECT_BREATHE:
-                    if (sIdEffect.bDirection) {
-                        if (sIdEffect.u8Level >= 250) {
-                            sIdEffect.u8Level -= 50;
-                            sIdEffect.bDirection = 0;
-                        } else {
-                            sIdEffect.u8Level += 50;
-                        }
-                    } else {
-                        if (sIdEffect.u8Level == 0) {
-                            // go back up, check for stop
-                            sIdEffect.u8Count--;
-                            if ((sIdEffect.u8Count) && ( !sIdEffect.bFinish)) {
-                                sIdEffect.u8Level += 50;
-                                sIdEffect.bDirection = 1;
-                            } else {
-                                //DBG_vPrintf(TRACE_LIGHT_TASK, "\n>>set tick 0<<");
-                                /* lpsw2773 - stop the effect on the next tick */
-                                sIdEffect.u8Tick = 0;
-                            }
-                        } else {
-                            sIdEffect.u8Level -= 50;
-                        }
-                    }
-                    break;
-                default:
-                    if ( sIdEffect.bFinish ) {
-                        sIdEffect.u8Tick = 0;
-                    }
-                }
-        } else {
-            /*
-             * Effect finished, restore the light
-             */
-            DBG_vPrintf(TRACE_PATH, "\nPath 6");
-            sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-            sIdEffect.bDirection = FALSE;
-            APP_ZCL_vSetIdentifyTime(0);
-                uint8 u8Red, u8Green, u8Blue;
-                vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT, &u8Red, &u8Green, &u8Blue);
-                //DBG_vPrintf(TRACE_LIGHT_TASK, "EF - R %d G %d B %d L %d Hue %d Sat %d\n",
-                //                    u8Red,
-                //                    u8Green,
-                //                    u8Blue,
-                //                    sLight.sLevelControlServerCluster.u8CurrentLevel,
-                //                    sLight.sColourControlServerCluster.u8CurrentHue,
-                //                    sLight.sColourControlServerCluster.u8CurrentSaturation);
+				sIdEffectRGB[u8Index].u8Tick--;
+				/* Set the light parameters */
+				vRGBLight_SetLevels(BULB_NUM_RGB(u8Index),
+						            TRUE,
+						            sIdEffectRGB[u8Index].u8Level,
+						            sIdEffectRGB[u8Index].u8Red,
+						            sIdEffectRGB[u8Index].u8Green,
+						            sIdEffectRGB[u8Index].u8Blue);
+				/* Now adjust parameters ready for for next round */
+				switch (sIdEffectRGB[u8Index].u8Effect) {
+					case E_CLD_IDENTIFY_EFFECT_BLINK:
+						break;
 
-                //vRGBLight_SetLevels(sLight.sOnOffServerCluster.bOnOff,
-                //                    sLight.sLevelControlServerCluster.u8CurrentLevel,
-                //                    u8Red,
-                //                    u8Green,
-                //                    u8Blue);
-        }
+					case E_CLD_IDENTIFY_EFFECT_BREATHE:
+						if (sIdEffectRGB[u8Index].bDirection) {
+							if (sIdEffectRGB[u8Index].u8Level >= 250) {
+								sIdEffectRGB[u8Index].u8Level -= 50;
+								sIdEffectRGB[u8Index].bDirection = 0;
+							} else {
+								sIdEffectRGB[u8Index].u8Level += 50;
+							}
+						} else {
+							if (sIdEffectRGB[u8Index].u8Level == 0) {
+								// go back up, check for stop
+								sIdEffectRGB[u8Index].u8Count--;
+								if ((sIdEffectRGB[u8Index].u8Count) && ( !sIdEffectRGB[u8Index].bFinish)) {
+									sIdEffectRGB[u8Index].u8Level += 50;
+									sIdEffectRGB[u8Index].bDirection = 1;
+								} else {
+									//DBG_vPrintf(TRACE_LIGHT_TASK, "\n>>set tick 0<<");
+									/* lpsw2773 - stop the effect on the next tick */
+									sIdEffectRGB[u8Index].u8Tick = 0;
+								}
+							} else {
+								sIdEffectRGB[u8Index].u8Level -= 50;
+							}
+						}
+						break;
+					default:
+						if ( sIdEffectRGB[u8Index].bFinish ) {
+							sIdEffectRGB[u8Index].u8Tick = 0;
+						}
+					}
+			} else {
+				/*
+				 * Effect finished, restore the light
+				 */
+				DBG_vPrintf(TRACE_PATH, "\nPath 6");
+				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+				sIdEffectRGB[u8Index].bDirection = FALSE;
+				APP_ZCL_vSetIdentifyTime(0);
+				uint8 u8Red, u8Green, u8Blue;
+				vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT + u8Index, &u8Red, &u8Green, &u8Blue);
+				DBG_vPrintf(TRACE_LIGHT_TASK, "EF - R %d G %d B %d L %d Hue %d Sat %d\n",
+				                    u8Red,
+				                    u8Green,
+				                    u8Blue,
+				                    sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+				                    sLightRGB[u8Index].sColourControlServerCluster.u8CurrentHue,
+				                    sLightRGB[u8Index].sColourControlServerCluster.u8CurrentSaturation);
+
+				vRGBLight_SetLevels(BULB_NUM_RGB(u8Index),
+						            sLightRGB[u8Index].sOnOffServerCluster.bOnOff,
+						            sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+				                    u8Red,
+				                    u8Green,
+				                    u8Blue);
+			}
+		}
+    }
+    else
+    {
+    	/* Mono light */
+
+    	if (sIdEffectMono[u8Index].u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
+		{
+			if (sIdEffectMono[u8Index].u8Tick > 0)
+			{
+				//DBG_vPrintf(TRACE_PATH, "\nPath 5");
+
+				sIdEffectMono[u8Index].u8Tick--;
+				/* Set the light parameters */
+
+				vSetBulbState(BULB_NUM_MONO(u8Index), TRUE, sIdEffectMono[u8Index].u8Level);
+
+				/* Now adjust parameters ready for for next round */
+				switch (sIdEffectMono[u8Index].u8Effect) {
+					case E_CLD_IDENTIFY_EFFECT_BLINK:
+						break;
+
+					case E_CLD_IDENTIFY_EFFECT_BREATHE:
+						if (sIdEffectMono[u8Index].bDirection) {
+							if (sIdEffectMono[u8Index].u8Level >= 250) {
+								sIdEffectMono[u8Index].u8Level -= 50;
+								sIdEffectMono[u8Index].bDirection = 0;
+							} else {
+								sIdEffectMono[u8Index].u8Level += 50;
+							}
+						} else {
+							if (sIdEffectMono[u8Index].u8Level == 0) {
+								// go back up, check for stop
+								sIdEffectMono[u8Index].u8Count--;
+								if ((sIdEffectMono[u8Index].u8Count) && ( !sIdEffectMono[u8Index].bFinish)) {
+									sIdEffectMono[u8Index].u8Level += 50;
+									sIdEffectMono[u8Index].bDirection = 1;
+								} else {
+									//DBG_vPrintf(TRACE_LIGHT_TASK, "\n>>set tick 0<<");
+									/* lpsw2773 - stop the effect on the next tick */
+									sIdEffectMono[u8Index].u8Tick = 0;
+								}
+							} else {
+								sIdEffectMono[u8Index].u8Level -= 50;
+							}
+						}
+						break;
+					case E_CLD_IDENTIFY_EFFECT_OKAY:
+						if ((sIdEffectMono[u8Index].u8Tick == 10) || (sIdEffectMono[u8Index].u8Tick == 5)) {
+							sIdEffectMono[u8Index].u8Level ^= 254;
+							if (sIdEffectMono[u8Index].bFinish) {
+								sIdEffectMono[u8Index].u8Tick = 0;
+							}
+						}
+						break;
+					case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
+						if ( sIdEffectMono[u8Index].u8Tick == 74) {
+							sIdEffectMono[u8Index].u8Level = 1;
+							if (sIdEffectMono[u8Index].bFinish) {
+								sIdEffectMono[u8Index].u8Tick = 0;
+							}
+						}
+						break;
+					default:
+						if ( sIdEffectMono[u8Index].bFinish ) {
+							sIdEffectMono[u8Index].u8Tick = 0;
+						}
+					}
+			} else {
+				/*
+				 * Effect finished, restore the light
+				 */
+				DBG_vPrintf(TRACE_PATH, "\nEffect End");
+				sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+				sIdEffectMono[u8Index].bDirection = FALSE;
+				APP_ZCL_vSetIdentifyTime(0);
+				vSetBulbState(BULB_NUM_MONO(u8Index),
+						      sLightMono[u8Index].sOnOffServerCluster.bOnOff,
+						      sLightMono[u8Index].sLevelControlServerCluster.u8CurrentLevel);
+			}
+		} else {
+			if (sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime) {
+				sIdEffectMono[u8Index].u8Count--;
+				if (0 == sIdEffectMono[u8Index].u8Count) {
+					sIdEffectMono[u8Index].u8Count = 5;
+					if (sIdEffectMono[u8Index].u8Level) {
+						sIdEffectMono[u8Index].u8Level = 0;
+						vSetBulbState(BULB_NUM_MONO(u8Index), FALSE, 0);
+					}
+					else
+					{
+						sIdEffectMono[u8Index].u8Level = 250;
+						vSetBulbState(BULB_NUM_MONO(u8Index), TRUE, CLD_LEVELCONTROL_MAX_LEVEL);
+					}
+				}
+			}
+		}
     }
 }
 
@@ -421,66 +614,140 @@ PUBLIC void vIdEffectTick(uint8 u8Endpoint) {
  * DESCRIPTION:
  * ZLL Device Specific identify effect set up
  *
- * PARAMETER: void
+ * PARAMETER: endpoint to start effect on, and effect number
  *
  * RETURNS: void
  *
  ****************************************************************************/
-PUBLIC void vStartEffect(uint8 u8Effect) {
-    switch (u8Effect) {
-        case E_CLD_IDENTIFY_EFFECT_BLINK:
-            sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_BLINK;
-            sIdEffect.u8Level = 250;
-            sIdEffect.u8Red = 255;
-            sIdEffect.u8Green = 0;
-            sIdEffect.u8Blue = 0;
-            sIdEffect.bFinish = FALSE;
-            APP_ZCL_vSetIdentifyTime(2);
-            sIdEffect.u8Tick = 10;
-            break;
-        case E_CLD_IDENTIFY_EFFECT_BREATHE:
-            sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_BREATHE;
-            sIdEffect.bDirection = 1;
-            sIdEffect.bFinish = FALSE;
-            sIdEffect.u8Level = 0;
-            sIdEffect.u8Count = 15;
-            eCLD_ColourControl_GetRGB( MULTILIGHT_LIGHT_RGB_1_ENDPOINT, &sIdEffect.u8Red, &sIdEffect.u8Green, &sIdEffect.u8Blue);
-            APP_ZCL_vSetIdentifyTime(17);
-            sIdEffect.u8Tick = 200;
-            break;
-        case E_CLD_IDENTIFY_EFFECT_OKAY:
-            sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_OKAY;
-            sIdEffect.bFinish = FALSE;
-            sIdEffect.u8Level = 250;
-            sIdEffect.u8Red = 0;
-            sIdEffect.u8Green = 255;
-            sIdEffect.u8Blue = 0;
-            APP_ZCL_vSetIdentifyTime(2);
-            sIdEffect.u8Tick = 10;
-            break;
-        case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
-            sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE;
-            sIdEffect.u8Level = 250;
-            sIdEffect.u8Red = 255;
-            sIdEffect.u8Green = 127;
-            sIdEffect.u8Blue = 4;
-            sIdEffect.bFinish = FALSE;
-            APP_ZCL_vSetIdentifyTime(9);
-            sIdEffect.u8Tick = 80;
-            break;
+PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 
-        case E_CLD_IDENTIFY_EFFECT_FINISH_EFFECT:
-            if (sIdEffect.u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
-            {
-                DBG_vPrintf(TRACE_LIGHT_TASK, "\n<FINISH>");
-                sIdEffect.bFinish = TRUE;
-            }
-            break;
-        case E_CLD_IDENTIFY_EFFECT_STOP_EFFECT:
-            sIdEffect.u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-            APP_ZCL_vSetIdentifyTime(1);
-            break;
-    }
+	uint8 u8Index;
+	bool_t bIsRGB;
+
+	if (!bEndPointToNum(u8Endpoint, &bIsRGB, &u8Index))
+	{
+		return;
+	}
+
+	if (bIsRGB)
+	{
+		/* Colour light */
+
+		switch (u8Effect) {
+			case E_CLD_IDENTIFY_EFFECT_BLINK:
+				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_BLINK;
+				sIdEffectRGB[u8Index].u8Level = 250;
+				sIdEffectRGB[u8Index].u8Red = 255;
+				sIdEffectRGB[u8Index].u8Green = 0;
+				sIdEffectRGB[u8Index].u8Blue = 0;
+				sIdEffectRGB[u8Index].bFinish = FALSE;
+				APP_ZCL_vSetIdentifyTime(2);
+				sIdEffectRGB[u8Index].u8Tick = 10;
+				break;
+			case E_CLD_IDENTIFY_EFFECT_BREATHE:
+				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_BREATHE;
+				sIdEffectRGB[u8Index].bDirection = 1;
+				sIdEffectRGB[u8Index].bFinish = FALSE;
+				sIdEffectRGB[u8Index].u8Level = 0;
+				sIdEffectRGB[u8Index].u8Count = 15;
+				eCLD_ColourControl_GetRGB(u8Endpoint,
+						                  &sIdEffectRGB[u8Index].u8Red,
+						                  &sIdEffectRGB[u8Index].u8Green,
+						                  &sIdEffectRGB[u8Index].u8Blue);
+				APP_ZCL_vSetIdentifyTime(17);
+				sIdEffectRGB[u8Index].u8Tick = 200;
+				break;
+			case E_CLD_IDENTIFY_EFFECT_OKAY:
+				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_OKAY;
+				sIdEffectRGB[u8Index].bFinish = FALSE;
+				sIdEffectRGB[u8Index].u8Level = 250;
+				sIdEffectRGB[u8Index].u8Red = 0;
+				sIdEffectRGB[u8Index].u8Green = 255;
+				sIdEffectRGB[u8Index].u8Blue = 0;
+				APP_ZCL_vSetIdentifyTime(2);
+				sIdEffectRGB[u8Index].u8Tick = 10;
+				break;
+			case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
+				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE;
+				sIdEffectRGB[u8Index].u8Level = 250;
+				sIdEffectRGB[u8Index].u8Red = 255;
+				sIdEffectRGB[u8Index].u8Green = 127;
+				sIdEffectRGB[u8Index].u8Blue = 4;
+				sIdEffectRGB[u8Index].bFinish = FALSE;
+				APP_ZCL_vSetIdentifyTime(9);
+				sIdEffectRGB[u8Index].u8Tick = 80;
+				break;
+
+			case E_CLD_IDENTIFY_EFFECT_FINISH_EFFECT:
+				if (sIdEffectRGB[u8Index].u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
+				{
+					DBG_vPrintf(TRACE_LIGHT_TASK, "\n<FINISH>");
+					sIdEffectRGB[u8Index].bFinish = TRUE;
+				}
+				break;
+			case E_CLD_IDENTIFY_EFFECT_STOP_EFFECT:
+				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+				APP_ZCL_vSetIdentifyTime(1);
+				break;
+		}
+	}
+	else
+	{
+		/* Mono light */
+
+		switch (u8Effect) {
+		case E_CLD_IDENTIFY_EFFECT_BLINK:
+			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_BLINK;
+			if (sLightMono[u8Index].sOnOffServerCluster.bOnOff) {
+				sIdEffectMono[u8Index].u8Level = 0;
+			} else {
+				sIdEffectMono[u8Index].u8Level = 250;
+			}
+			sIdEffectMono[u8Index].bFinish = FALSE;
+			APP_ZCL_vSetIdentifyTime(2);
+			sIdEffectMono[u8Index].u8Tick = 10;
+			break;
+		case E_CLD_IDENTIFY_EFFECT_BREATHE:
+			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_BREATHE;
+			sIdEffectMono[u8Index].bDirection = 1;
+			sIdEffectMono[u8Index].bFinish = FALSE;
+			sIdEffectMono[u8Index].u8Level = 0;
+			sIdEffectMono[u8Index].u8Count = 15;
+			APP_ZCL_vSetIdentifyTime(17);
+			sIdEffectMono[u8Index].u8Tick = 200;
+			break;
+		case E_CLD_IDENTIFY_EFFECT_OKAY:
+			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_OKAY;
+			sIdEffectMono[u8Index].bFinish = FALSE;
+			if (sLightMono[u8Index].sOnOffServerCluster.bOnOff) {
+				sIdEffectMono[u8Index].u8Level = 0;
+			} else {
+				sIdEffectMono[u8Index].u8Level = 254;
+			}
+			APP_ZCL_vSetIdentifyTime(3);
+			sIdEffectMono[u8Index].u8Tick = 15;
+			break;
+		case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
+			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE;
+			sIdEffectMono[u8Index].u8Level = 254;
+			sIdEffectMono[u8Index].bFinish = FALSE;
+			APP_ZCL_vSetIdentifyTime(9);
+			sIdEffectMono[u8Index].u8Tick = 80;
+			break;
+
+		case E_CLD_IDENTIFY_EFFECT_FINISH_EFFECT:
+			if (sIdEffectMono[u8Index].u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
+			{
+				DBG_vPrintf(TRACE_LIGHT_TASK, "\n<FINISH>");
+				sIdEffectMono[u8Index].bFinish = TRUE;
+			}
+			break;
+		case E_CLD_IDENTIFY_EFFECT_STOP_EFFECT:
+			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+			APP_ZCL_vSetIdentifyTime(1);
+			break;
+	}
+	}
 }
 
 
@@ -496,17 +763,40 @@ PUBLIC void vStartEffect(uint8 u8Effect) {
  *
  ****************************************************************************/
 
-PUBLIC void vRGBLight_SetLevels(bool_t bOn, uint8 u8Level, uint8 u8Red, uint8 u8Green, uint8 u8Blue)
+PUBLIC void vRGBLight_SetLevels(uint8 u8Bulb, bool_t bOn, uint8 u8Level, uint8 u8Red, uint8 u8Green, uint8 u8Blue)
 {
     if (bOn == TRUE)
     {
-    	vLI_Start(u8Level, u8Red, u8Green, u8Blue, 0);
+    	vLI_Start(u8Bulb, u8Level, u8Red, u8Green, u8Blue, 0);
     }
     else
     {
-        vLI_Stop();
+        vLI_Stop(u8Bulb);
     }
-    DriverBulb_vSetOnOff(0, bOn);
+    DriverBulb_vSetOnOff(u8Bulb, bOn);
+}
+
+/****************************************************************************
+ *
+ * NAME: vSetBulbState
+ *
+ * DESCRIPTION:
+ * Set level of dimmable bulb
+ *
+ * RETURNS: void
+ *
+ ****************************************************************************/
+PUBLIC void vSetBulbState(uint8 u8Bulb, bool bOn, uint8 u8Level)
+{
+	if (bOn)
+	{
+		vLI_Start(u8Bulb, u8Level, 0, 0, 0, 0);
+	}
+	else
+    {
+        vLI_Stop(u8Bulb);
+    }
+	DriverBulb_vSetOnOff(u8Bulb, bOn);
 }
 
 /****************************************************************/

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "App_MultiLight.h"
+#include "DriverBulb.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -37,7 +38,6 @@
 
 #define PCA9685_ADDRESS		(0x40)		/* 7 bit default I2C address of PCA9685 */
 
-#define NUM_BULBS		    ((NUM_MONO_LIGHTS) + (NUM_RGB_LIGHTS))
 #define PWM_MAX				4095
 
 /****************************************************************************/
@@ -54,8 +54,6 @@ PRIVATE uint16  u16CurrLevel[NUM_BULBS];
 PRIVATE uint16  u16CurrRed[NUM_BULBS];
 PRIVATE uint16  u16CurrGreen[NUM_BULBS];
 PRIVATE uint16  u16CurrBlue[NUM_BULBS];
-PRIVATE uint8   rx_buf[128];
-PRIVATE uint8   tx_buf[128];
 
 /* Map of bulbs to PCA9685 channels. */
 PRIVATE const uint8 u8ChannelMap[NUM_BULBS * 3] = {
@@ -323,6 +321,10 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 			u16Brightness[0] = (uint16)(((uint32)u16CurrRed[u8Bulb]   * (uint32)u16CurrLevel[u8Bulb]) / (uint32)PWM_MAX);
 			u16Brightness[1] = (uint16)(((uint32)u16CurrGreen[u8Bulb] * (uint32)u16CurrLevel[u8Bulb]) / (uint32)PWM_MAX);
 			u16Brightness[2] = (uint16)(((uint32)u16CurrBlue[u8Bulb]  * (uint32)u16CurrLevel[u8Bulb]) / (uint32)PWM_MAX);
+		}
+		else
+		{
+			u16Brightness[0] = u16CurrLevel[u8Bulb];
 		}
 
 		for (i = 0; i < u8NumChannels; i++)

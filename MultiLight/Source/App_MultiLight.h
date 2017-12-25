@@ -61,14 +61,16 @@ extern tsCLD_ZllDeviceTable sDeviceTable;
 
 PUBLIC teZCL_Status eApp_ZLL_RegisterEndpoint(tfpZCL_ZCLCallBackFunction fptr,
                                        tsZLL_CommissionEndpoint* psCommissionEndpoint);
-PUBLIC void vApp_eCLD_ColourControl_GetRGB(uint8* pu8Red,uint8* pu8Green,uint8* pu8Blue);
+PUBLIC bool_t bEndPointToNum(uint8 u8Endpoint, bool_t* bIsRGB, uint8* u8Num);
+PUBLIC void vApp_eCLD_ColourControl_GetRGB(uint8 u8Endpoint,uint8* pu8Red,uint8* pu8Green,uint8* pu8Blue);
 PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void);
-PUBLIC void vStartEffect(uint8 u8Effect);
+PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect);
 PUBLIC void vIdEffectTick(uint8 u8Endpoint);
 
-PUBLIC void vRGBLight_SetLevels(bool_t bOn, uint8 u8Level, uint8 u8Red,
+PUBLIC void vRGBLight_SetLevels(uint8 u8Bulb, bool_t bOn, uint8 u8Level, uint8 u8Red,
                                 uint8 u8Green, uint8 u8Blue);
-PUBLIC void APP_vHandleIdentify(uint16 u16Time);
+PUBLIC void vSetBulbState(uint8 u8Bulb, bool bOn, uint8 u8Level);
+PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint);
 PUBLIC void vCreateInterpolationPoints( void);
 
 /****************************************************************************/

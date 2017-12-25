@@ -253,6 +253,7 @@ OS_TASK(Tick_Task)
     static uint32 u32Tick1Sec = 99;
 
     tsZCL_CallBackEvent sCallBackEvent;
+    uint8 i;
 
     OS_eContinueSWTimer(APP_TickTimer, /*TEN_HZ_TICK_TIME*/APP_TIME_MS(10), NULL);
 
@@ -268,7 +269,10 @@ OS_TASK(Tick_Task)
 #if ( defined CLD_LEVEL_CONTROL) && !(defined MONO_ON_OFF)  /* add in nine 10ms interpolation points */
     else
     {
-        vLI_CreatePoints();
+    	for (i = 0; i < NUM_BULBS; i++)
+    	{
+    		vLI_CreatePoints(i);
+    	}
     }
 #endif
 
@@ -403,10 +407,16 @@ PRIVATE void APP_ZCL_cbGeneralCallback(tsZCL_CallBackEvent *psEvent)
  ****************************************************************************/
 PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
 {
+	uint8 u8Index = 0;
+	bool_t bIsRGB = FALSE;
+	uint16 u16IdentifyTime;
+
     #if (defined CLD_COLOUR_CONTROL)  && !(defined DR1221) && !(defined DR1221_Dimic)
         uint8 u8Red, u8Green, u8Blue;
     #endif
     //DBG_vPrintf(TRACE_ZCL, "\nEntering cbZCL_EndpointCallback");
+
+    bEndPointToNum(psEvent->u8EndPoint, &bIsRGB, &u8Index);
 
     switch (psEvent->eEventType)
     {
@@ -473,75 +483,58 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
 
                 }
 
-                #if (defined CLD_COLOUR_CONTROL) && !(defined DR1221) && !(defined DR1221_Dimic)
-                	if ((psEvent->u8EndPoint >= MULTILIGHT_LIGHT_RGB_1_ENDPOINT)
-                			&& (psEvent->u8EndPoint <= MULTILIGHT_LIGHT_RGB_3_ENDPOINT))
-                	{
-                		vApp_eCLD_ColourControl_GetRGB(psEvent->u8EndPoint, &u8Red, &u8Green, &u8Blue);
-                	}
-                	else
-                	{
-                		u8Red = 0;
-                		u8Green = 0;
-                		u8Blue = 0;
-                	}
+				if (bIsRGB)
+				{
+					vApp_eCLD_ColourControl_GetRGB(psEvent->u8EndPoint, &u8Red, &u8Green, &u8Blue);
+				}
+				else
+				{
+					u8Red = 0;
+					u8Green = 0;
+					u8Blue = 0;
+				}
 #if TRACE_LIGHT_TASK
-
-                	// TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "\nR %d G %d B %d L %d ",
-                                          u8Red, u8Green, u8Blue, sLightRGB[0].sLevelControlServerCluster.u8CurrentLevel);
-#if (CLD_COLOURCONTROL_COLOUR_CAPABILITIES & COLOUR_CAPABILITY_HUE_SATURATION_SUPPORTED)
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "Hue %d Sat %d ",
-                    		             sLightRGB[0].sColourControlServerCluster.u8CurrentHue,
-                                         sLightRGB[0].sColourControlServerCluster.u8CurrentSaturation);
-#endif
-#if (CLD_COLOURCONTROL_COLOUR_CAPABILITIES & COLOUR_CAPABILITY_XY_SUPPORTED)
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "X %d Y %d ",
-                    		              sLightRGB[0].sColourControlServerCluster.u16CurrentX,
-                                          sLightRGB[0].sColourControlServerCluster.u16CurrentY);
-#endif
-#if (CLD_COLOURCONTROL_COLOUR_CAPABILITIES & COLOUR_CAPABILITY_COLOUR_TEMPERATURE_SUPPORTED)
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "T %dK ",
-                                         1000000 / sLight.sColourControlServerCluster.u16ColourTemperatureMired);
-#endif
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "M %d On %d OnTime %d OffTime %d",
-                    		            sLightRGB[0].sColourControlServerCluster.u8ColourMode,
-                                        sLightRGB[0].sOnOffServerCluster.bOnOff,
-                                        sLightRGB[0].sOnOffServerCluster.u16OnTime,
-                                        sLightRGB[0].sOnOffServerCluster.u16OffWaitTime);
+				if (bIsRGB)
+				{
+					DBG_vPrintf(TRACE_LIGHT_TASK, "\nR %d G %d B %d L %d ",
+								u8Red, u8Green, u8Blue, sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel);
+					DBG_vPrintf(TRACE_LIGHT_TASK, "Hue %d Sat %d ",
+								sLightRGB[u8Index].sColourControlServerCluster.u8CurrentHue,
+								sLightRGB[u8Index].sColourControlServerCluster.u8CurrentSaturation);
+					DBG_vPrintf(TRACE_LIGHT_TASK, "X %d Y %d ",
+								sLightRGB[u8Index].sColourControlServerCluster.u16CurrentX,
+								sLightRGB[u8Index].sColourControlServerCluster.u16CurrentY);
+					DBG_vPrintf(TRACE_LIGHT_TASK, "M %d On %d OnTime %d OffTime %d",
+								sLightRGB[u8Index].sColourControlServerCluster.u8ColourMode,
+								sLightRGB[u8Index].sOnOffServerCluster.bOnOff,
+								sLightRGB[u8Index].sOnOffServerCluster.u16OnTime,
+								sLightRGB[u8Index].sOnOffServerCluster.u16OffWaitTime);
+				}
+				else
+				{
+					DBG_vPrintf(TRACE_LIGHT_TASK, "\nL %d On %d OnTime %d OffTime %d",
+								sLightMono[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+								sLightMono[u8Index].sOnOffServerCluster.bOnOff,
+								sLightMono[u8Index].sOnOffServerCluster.u16OnTime,
+								sLightMono[u8Index].sOnOffServerCluster.u16OffWaitTime);
+				}
 #endif
 
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    vRGBLight_SetLevels(sLightRGB[0].sOnOffServerCluster.bOnOff,
-                    		sLightRGB[0].sLevelControlServerCluster.u8CurrentLevel,
-                            u8Red,
-                            u8Green,
-                            u8Blue);
-                #elif (defined CLD_COLOUR_CONTROL) && ((defined DR1221) || (defined DR1221_Dimic))
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "\nOOOn =%d :L=%d T=%dK",sLight.sOnOffServerCluster.bOnOff,
-                    		                                             sLight.sLevelControlServerCluster.u8CurrentLevel,
-                    		                                             (1000000 / sLight.sColourControlServerCluster.u16ColourTemperatureMired));
-
-                    /* controllable colour temperature tunable white (CCT TW) bulbs */
-                    vTunableWhiteLightSetLevels(sLight.sOnOffServerCluster.bOnOff,
-                   					            sLight.sLevelControlServerCluster.u8CurrentLevel,
-                   					            sLight.sColourControlServerCluster.u16ColourTemperatureMired);
-
-                #elif (defined MONO_WITH_LEVEL)
-
-                    /* Dimmable monochrome lamps */
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    //vSetBulbState(sLightMono[0].sOnOffServerCluster.bOnOff, sLightMono[0].sLevelControlServerCluster.u8CurrentLevel);
-                #elif (defined MONO_ON_OFF)
-                    /*
-                     * Bulb with onoff only
-                     */
-                    DBG_vPrintf(TRACE_PATH, "\nJP on_off only bulb");
-                    vSetBulbState( sLight.sOnOffServerCluster.bOnOff);
-                #endif
+				if (bIsRGB)
+				{
+					vRGBLight_SetLevels(BULB_NUM_RGB(u8Index),
+										sLightRGB[u8Index].sOnOffServerCluster.bOnOff,
+										sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+										u8Red,
+										u8Green,
+										u8Blue);
+				}
+				else
+				{
+					vSetBulbState(BULB_NUM_MONO(u8Index),
+								  sLightMono[u8Index].sOnOffServerCluster.bOnOff,
+								  sLightMono[u8Index].sLevelControlServerCluster.u8CurrentLevel);
+				}
             }
             break;
             case GENERAL_CLUSTER_ID_IDENTIFY:
@@ -549,11 +542,10 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                 tsCLD_IdentifyCallBackMessage *psCallBackMessage = (tsCLD_IdentifyCallBackMessage*)psEvent->uMessage.sClusterCustomMessage.pvCustomData;
                 if (psCallBackMessage->u8CommandId == E_CLD_IDENTIFY_CMD_TRIGGER_EFFECT) {
                     DBG_vPrintf(TRACE_LIGHT_TASK, "Identify Cust CB %d\n", psCallBackMessage->uMessage.psTriggerEffectRequestPayload->eEffectId);
-                    vStartEffect(psCallBackMessage->uMessage.psTriggerEffectRequestPayload->eEffectId);
+                    vStartEffect(psEvent->u8EndPoint, psCallBackMessage->uMessage.psTriggerEffectRequestPayload->eEffectId);
                 } else if (psCallBackMessage->u8CommandId == E_CLD_IDENTIFY_CMD_IDENTIFY) {
                     DBG_vPrintf(TRACE_PATH, "\nJP E_CLD_IDENTIFY_CMD_IDENTIFY");
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    APP_vHandleIdentify(sLightRGB[0].sIdentifyServerCluster.u16IdentifyTime);
+                    APP_vHandleIdentify(psEvent->u8EndPoint);
                 }
             }
             break;
@@ -582,78 +574,75 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
         }
         else if (psEvent->psClusterInstance->psClusterDefinition->u16ClusterEnum == GENERAL_CLUSTER_ID_IDENTIFY)
         {
-        	// TODO: refer to correct sLight based on psEvent->u8EndPoint
-            APP_vHandleIdentify(sLightRGB[0].sIdentifyServerCluster.u16IdentifyTime);
+            APP_vHandleIdentify(psEvent->u8EndPoint);
         }
         else
         {
-        	// TODO: refer to correct sLight based on psEvent->u8EndPoint
-            if (sLightRGB[0].sIdentifyServerCluster.u16IdentifyTime == 0) {
-                /*
-                 * If not identifying then do the light
-                 */
+        	if (bIsRGB)
+        	{
+        		u16IdentifyTime = sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime;
+        	}
+        	else
+        	{
+        		u16IdentifyTime = sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime;
+        	}
+            if (u16IdentifyTime == 0)
+            {
+				/*
+				 * If not identifying then do the light
+				 */
                 //DBG_vPrintf(TRACE_PATH, "\nPath 2");
-                #if (defined CLD_COLOUR_CONTROL) && !(defined DR1221) && !(defined DR1221_Dimic)
-                    vApp_eCLD_ColourControl_GetRGB(psEvent->u8EndPoint, &u8Red, &u8Green, &u8Blue);
+            	if (bIsRGB)
+				{
+					vApp_eCLD_ColourControl_GetRGB(psEvent->u8EndPoint, &u8Red, &u8Green, &u8Blue);
+				}
+				else
+				{
+					u8Red = 0;
+					u8Green = 0;
+					u8Blue = 0;
+				}
 #if TRACE_LIGHT_TASK
-
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "\nR %d G %d B %d L %d ",
-                                          u8Red, u8Green, u8Blue, sLightRGB[0].sLevelControlServerCluster.u8CurrentLevel);
-#if (CLD_COLOURCONTROL_COLOUR_CAPABILITIES & COLOUR_CAPABILITY_HUE_SATURATION_SUPPORTED)
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "Hue %d Sat %d ",
-                    		             sLightRGB[0].sColourControlServerCluster.u8CurrentHue,
-                                         sLightRGB[0].sColourControlServerCluster.u8CurrentSaturation);
+            	if (bIsRGB)
+				{
+					DBG_vPrintf(TRACE_LIGHT_TASK, "\nR %d G %d B %d L %d ",
+								u8Red, u8Green, u8Blue, sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel);
+					DBG_vPrintf(TRACE_LIGHT_TASK, "Hue %d Sat %d ",
+								sLightRGB[u8Index].sColourControlServerCluster.u8CurrentHue,
+								sLightRGB[u8Index].sColourControlServerCluster.u8CurrentSaturation);
+					DBG_vPrintf(TRACE_LIGHT_TASK, "X %d Y %d ",
+								sLightRGB[u8Index].sColourControlServerCluster.u16CurrentX,
+								sLightRGB[u8Index].sColourControlServerCluster.u16CurrentY);
+					DBG_vPrintf(TRACE_LIGHT_TASK, "M %d On %d OnTime %d OffTime %d",
+								sLightRGB[u8Index].sColourControlServerCluster.u8ColourMode,
+								sLightRGB[u8Index].sOnOffServerCluster.bOnOff,
+								sLightRGB[u8Index].sOnOffServerCluster.u16OnTime,
+								sLightRGB[u8Index].sOnOffServerCluster.u16OffWaitTime);
+				}
+            	else
+				{
+					DBG_vPrintf(TRACE_LIGHT_TASK, "\nL %d On %d OnTime %d OffTime %d",
+								sLightMono[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+								sLightMono[u8Index].sOnOffServerCluster.bOnOff,
+								sLightMono[u8Index].sOnOffServerCluster.u16OnTime,
+								sLightMono[u8Index].sOnOffServerCluster.u16OffWaitTime);
+				}
 #endif
-#if (CLD_COLOURCONTROL_COLOUR_CAPABILITIES & COLOUR_CAPABILITY_XY_SUPPORTED)
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "X %d Y %d ",
-                    		              sLightRGB[0].sColourControlServerCluster.u16CurrentX,
-                                          sLightRGB[0].sColourControlServerCluster.u16CurrentY);
-#endif
-#if (CLD_COLOURCONTROL_COLOUR_CAPABILITIES & COLOUR_CAPABILITY_COLOUR_TEMPERATURE_SUPPORTED)
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "T %dK ",
-                                         1000000 / sLight.sColourControlServerCluster.u16ColourTemperatureMired);
-#endif
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    DBG_vPrintf(TRACE_LIGHT_TASK, "M %d On %d OnTime %d OffTime %d",
-                    		            sLightRGB[0].sColourControlServerCluster.u8ColourMode,
-                                        sLightRGB[0].sOnOffServerCluster.bOnOff,
-                                        sLightRGB[0].sOnOffServerCluster.u16OnTime,
-                                        sLightRGB[0].sOnOffServerCluster.u16OffWaitTime);
-#endif
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    vRGBLight_SetLevels(sLightRGB[0].sOnOffServerCluster.bOnOff,
-                    	sLightRGB[0].sLevelControlServerCluster.u8CurrentLevel,
-                        u8Red,
-                        u8Green,
-                        u8Blue);
-
-				#elif (defined CLD_COLOUR_CONTROL) && ((defined DR1221) || (defined DR1221_Dimic))
-                    /* controllable colour temperature tunable white (CCT TW) bulbs */
-                    DBG_vPrintf(TRACE_LIGHT_TASK,"\nCU:On %d, L:%d  T:%dK",sLight.sOnOffServerCluster.bOnOff,
-                    		                                            sLight.sLevelControlServerCluster.u8CurrentLevel,
-                    		                                            (1000000 / sLight.sColourControlServerCluster.u16ColourTemperatureMired));
-
-                    vTunableWhiteLightSetLevels(sLight.sOnOffServerCluster.bOnOff,
-                                                sLight.sLevelControlServerCluster.u8CurrentLevel,
-                                   		        sLight.sColourControlServerCluster.u16ColourTemperatureMired);
-
-                #elif ( defined MONO_WITH_LEVEL)
-                    /*
-                     * Monochrome bulb with level control
-                     */
-                    // TODO: refer to correct sLight based on psEvent->u8EndPoint
-                    //vSetBulbState(sLightMono[0].sOnOffServerCluster.bOnOff, sLightMono[0].sLevelControlServerCluster.u8CurrentLevel);
-
-                #elif (defined MONO_ON_OFF)
-                    /*
-                     * mono on off bulb
-                     */
-                    DBG_vPrintf(TRACE_PATH, "\nJP on_off only bulb");
-                    vSetBulbState( sLight.sOnOffServerCluster.bOnOff);
-                #endif
+                if (bIsRGB)
+                {
+                    vRGBLight_SetLevels(BULB_NUM_RGB(u8Index),
+                    		            sLightRGB[u8Index].sOnOffServerCluster.bOnOff,
+                    	                sLightRGB[u8Index].sLevelControlServerCluster.u8CurrentLevel,
+                                        u8Red,
+                                        u8Green,
+                                        u8Blue);
+                }
+                else
+                {
+                	vSetBulbState(BULB_NUM_MONO(u8Index),
+                			      sLightMono[u8Index].sOnOffServerCluster.bOnOff,
+                			      sLightMono[u8Index].sLevelControlServerCluster.u8CurrentLevel);
+                }
             }
         }
         break;

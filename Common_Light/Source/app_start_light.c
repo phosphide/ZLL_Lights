@@ -179,6 +179,8 @@ PWRM_CALLBACK(Wakeup)
  ****************************************************************************/
 PUBLIC void vAppMain(void)
 {
+	uint8 i;
+
 #if JENNIC_CHIP_FAMILY == JN516x
     // Wait until FALSE i.e. on XTAL  - otherwise uart data will be at wrong speed
      while (bAHI_GetClkSource() == TRUE);
@@ -193,9 +195,10 @@ PUBLIC void vAppMain(void)
 
     /* Bulb is now on 100% white (RGB or Mono) so ensure the LI     */
     /*  module's values are consistent with this initial state      */
-#ifndef MONO_ON_OFF
-     vLI_SetCurrentValues(CLD_LEVELCONTROL_MAX_LEVEL ,255,255,255,4000 );
-#endif
+	for (i = 0; i < NUM_BULBS; i++)
+	{
+		vLI_SetCurrentValues(i, CLD_LEVELCONTROL_MAX_LEVEL, 255, 255, 255, 4000);
+	}
 
     g_u8ZpsExpiryMaxCount = 1;
 

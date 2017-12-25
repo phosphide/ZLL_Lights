@@ -41,10 +41,15 @@ extern "C" {
 /****************************************************************************/
 /* SDK includes */
 #include <jendefs.h>
+#include "App_MultiLight.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
+
+#define NUM_BULBS		    ((NUM_MONO_LIGHTS) + (NUM_RGB_LIGHTS))
+#define BULB_NUM_MONO(x)	((x))
+#define BULB_NUM_RGB(x)		((x) + (NUM_MONO_LIGHTS))
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/

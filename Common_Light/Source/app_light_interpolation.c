@@ -83,12 +83,7 @@ PRIVATE uint32  u32divu10(uint32 n);
 /***        Local Variables                                               ***/
 /****************************************************************************/
 
-PRIVATE tsLI_Vars sLI_Vars = {.sLevel.i32Delta   = 0,
-		                      .sRed.i32Delta     = 0,
-                              .sGreen.i32Delta   = 0,
-                              .sBlue.i32Delta    = 0,
-                              .sColTemp.i32Delta = 0,
-                              .u32PointsAdded  = INTPOINTS};
+PRIVATE tsLI_Vars sLI_Vars[NUM_BULBS];
 
 /****************************************************************************/
 /***        Exported Functions                                            ***/
@@ -100,13 +95,13 @@ PRIVATE tsLI_Vars sLI_Vars = {.sLevel.i32Delta   = 0,
  * DESCRIPTION:
  * Sets the current interpolation values
  ****************************************************************************/
-PUBLIC void vLI_SetCurrentValues(uint32 u32Level, uint32 u32Red, uint32 u32Green, uint32 u32Blue, uint32 u32ColTemp)
+PUBLIC void vLI_SetCurrentValues(uint8 u8Bulb, uint32 u32Level, uint32 u32Red, uint32 u32Green, uint32 u32Blue, uint32 u32ColTemp)
 {
-	sLI_Vars.sLevel.u32Current   += u32Level   << SCALE;
-	sLI_Vars.sRed.u32Current     += u32Red     << SCALE;
-	sLI_Vars.sGreen.u32Current   += u32Blue    << SCALE;
-    sLI_Vars.sBlue.u32Current    += u32Green   << SCALE;
-    sLI_Vars.sColTemp.u32Current += u32ColTemp << SCALE;
+	sLI_Vars[u8Bulb].sLevel.u32Current   += u32Level   << SCALE;
+	sLI_Vars[u8Bulb].sRed.u32Current     += u32Red     << SCALE;
+	sLI_Vars[u8Bulb].sGreen.u32Current   += u32Blue    << SCALE;
+    sLI_Vars[u8Bulb].sBlue.u32Current    += u32Green   << SCALE;
+    sLI_Vars[u8Bulb].sColTemp.u32Current += u32ColTemp << SCALE;
 
 }
 
@@ -116,20 +111,20 @@ PUBLIC void vLI_SetCurrentValues(uint32 u32Level, uint32 u32Red, uint32 u32Green
  * DESCRIPTION:
  * Starts the linear interpolation process between successive ZCL updates
  ****************************************************************************/
-PUBLIC void vLI_Start(uint32 u32Level, uint32 u32Red, uint32 u32Green, uint32 u32Blue, uint32 u32ColTemp)
+PUBLIC void vLI_Start(uint8 u8Bulb, uint32 u32Level, uint32 u32Red, uint32 u32Green, uint32 u32Blue, uint32 u32ColTemp)
 {
-	vLI_InitVar(&sLI_Vars.sLevel,    u32Level);
-	vLI_InitVar(&sLI_Vars.sRed,      u32Red);
-	vLI_InitVar(&sLI_Vars.sGreen,    u32Green);
-    vLI_InitVar(&sLI_Vars.sBlue,     u32Blue);
-    vLI_InitVar(&sLI_Vars.sColTemp,  u32ColTemp);
-    vLI_UpdateDriver();
-    sLI_Vars.u32PointsAdded  = 1;
+	vLI_InitVar(&(sLI_Vars[u8Bulb].sLevel),    u32Level);
+	vLI_InitVar(&(sLI_Vars[u8Bulb].sRed),      u32Red);
+	vLI_InitVar(&(sLI_Vars[u8Bulb].sGreen),    u32Green);
+    vLI_InitVar(&(sLI_Vars[u8Bulb].sBlue),     u32Blue);
+    vLI_InitVar(&(sLI_Vars[u8Bulb].sColTemp),  u32ColTemp);
+    vLI_UpdateDriver(u8Bulb);
+    sLI_Vars[u8Bulb].u32PointsAdded  = 1;
 }
 
-PUBLIC void vLI_Stop(void)
+PUBLIC void vLI_Stop(uint8 u8Bulb)
 {
-    sLI_Vars.u32PointsAdded = INTPOINTS;
+    sLI_Vars[u8Bulb].u32PointsAdded = INTPOINTS;
 }
 
 /****************************************************************************
@@ -140,17 +135,17 @@ PUBLIC void vLI_Stop(void)
  * successive  ZCL updates.  This provides smooth 100Hz updates
  * on colour and level transitions
  ****************************************************************************/
-PUBLIC void vLI_CreatePoints(void)
+PUBLIC void vLI_CreatePoints(uint8 u8Bulb)
 {
-    if (sLI_Vars.u32PointsAdded < INTPOINTS)
+    if (sLI_Vars[u8Bulb].u32PointsAdded < INTPOINTS)
     {
-    	sLI_Vars.u32PointsAdded++;
-        sLI_Vars.sLevel.u32Current   += sLI_Vars.sLevel.i32Delta;
-        sLI_Vars.sRed.u32Current     += sLI_Vars.sRed.i32Delta;
-        sLI_Vars.sGreen.u32Current   += sLI_Vars.sGreen.i32Delta;
-        sLI_Vars.sBlue.u32Current    += sLI_Vars.sBlue.i32Delta;
-        sLI_Vars.sColTemp.u32Current += sLI_Vars.sColTemp.i32Delta;
-        vLI_UpdateDriver();
+    	sLI_Vars[u8Bulb].u32PointsAdded++;
+        sLI_Vars[u8Bulb].sLevel.u32Current   += sLI_Vars[u8Bulb].sLevel.i32Delta;
+        sLI_Vars[u8Bulb].sRed.u32Current     += sLI_Vars[u8Bulb].sRed.i32Delta;
+        sLI_Vars[u8Bulb].sGreen.u32Current   += sLI_Vars[u8Bulb].sGreen.i32Delta;
+        sLI_Vars[u8Bulb].sBlue.u32Current    += sLI_Vars[u8Bulb].sBlue.i32Delta;
+        sLI_Vars[u8Bulb].sColTemp.u32Current += sLI_Vars[u8Bulb].sColTemp.i32Delta;
+        vLI_UpdateDriver(u8Bulb);
     }
 }
 
@@ -161,14 +156,14 @@ PUBLIC void vLI_CreatePoints(void)
  *			passes the LI points between previous and current
  *			ZCL updates to the colour driver for smooth transitions
  ****************************************************************************/
-PUBLIC void vLI_UpdateDriver(void)
+PUBLIC void vLI_UpdateDriver(uint8 u8Bulb)
 {
-	DriverBulb_vSetColour(0,
-			              sLI_Vars.sRed.u32Current   >> SCALE,
-			              sLI_Vars.sGreen.u32Current >> SCALE,
-			              sLI_Vars.sBlue.u32Current  >> SCALE);
+	DriverBulb_vSetColour(u8Bulb,
+			              sLI_Vars[u8Bulb].sRed.u32Current   >> SCALE,
+			              sLI_Vars[u8Bulb].sGreen.u32Current >> SCALE,
+			              sLI_Vars[u8Bulb].sBlue.u32Current  >> SCALE);
 
-	DriverBulb_vSetLevel(0, sLI_Vars.sLevel.u32Current  >> SCALE);
+	DriverBulb_vSetLevel(u8Bulb, sLI_Vars[u8Bulb].sLevel.u32Current  >> SCALE);
 }
 
 /****************************************************************************/
