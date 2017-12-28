@@ -219,21 +219,48 @@ PUBLIC void APP_ZCL_vInitialise(void)
  * DESCRIPTION:
  * Sets the remaining time in the identify cluster
  *
+ * PARAMETERS:
+ * bAllEndpoints: Pass TRUE to set remaining time for all endpoints, pass FALSE
+ * to set remaining time for a single endpoint.
+ * u8Endpoint: Endpoint whose remaining time will be set
+ * u16Time: Remaining time for identify
+ *
  * RETURNS:
  * void
  *
  ****************************************************************************/
-PUBLIC void APP_ZCL_vSetIdentifyTime(uint16 u16Time)
+PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uint16 u16Time)
 {
-	unsigned int i;
+	uint8 u8Index;
+	bool_t bIsRGB;
 
-	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	if (bAllEndpoints)
 	{
-		sLightMono[i].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+		/* Set remaining time for all endpoints */
+		for (u8Index = 0; u8Index < NUM_MONO_LIGHTS; u8Index++)
+		{
+			sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+		}
+		for (u8Index = 0; u8Index < NUM_RGB_LIGHTS; u8Index++)
+		{
+			sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+		}
 	}
-	for (i = 0; i < NUM_RGB_LIGHTS; i++)
+	else
 	{
-		sLightRGB[i].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+		/* Set remaining time for a single endpoint */
+		if (!bEndPointToNum(u8Endpoint, &bIsRGB, &u8Index))
+		{
+			return;
+		}
+		if (bIsRGB)
+		{
+			sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+		}
+		else
+		{
+			sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+		}
 	}
 }
 

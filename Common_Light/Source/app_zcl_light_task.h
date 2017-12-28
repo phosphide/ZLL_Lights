@@ -68,7 +68,7 @@
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 PUBLIC void APP_ZCL_vInitialise(void);
-PUBLIC void APP_ZCL_vSetIdentifyTime(uint16 u16Time);
+PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uint16 u16Time);
 
 
 /****************************************************************************/

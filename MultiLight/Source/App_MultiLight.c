@@ -482,7 +482,7 @@ PUBLIC void vIdEffectTick(void) {
 				DBG_vPrintf(TRACE_PATH, "\nPath 6");
 				sIdEffectRGB[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
 				sIdEffectRGB[i].bDirection = FALSE;
-				APP_ZCL_vSetIdentifyTime(0);
+				APP_ZCL_vSetIdentifyTime(FALSE, MULTILIGHT_LIGHT_RGB_1_ENDPOINT + i, 0);
 				uint8 u8Red, u8Green, u8Blue;
 				vApp_eCLD_ColourControl_GetRGB(MULTILIGHT_LIGHT_RGB_1_ENDPOINT + i, &u8Red, &u8Green, &u8Blue);
 				DBG_vPrintf(TRACE_LIGHT_TASK, "EF - R %d G %d B %d L %d Hue %d Sat %d\n",
@@ -576,7 +576,7 @@ PUBLIC void vIdEffectTick(void) {
 				DBG_vPrintf(TRACE_PATH, "\nEffect End");
 				sIdEffectMono[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
 				sIdEffectMono[i].bDirection = FALSE;
-				APP_ZCL_vSetIdentifyTime(0);
+				APP_ZCL_vSetIdentifyTime(FALSE, MULTILIGHT_LIGHT_MONO_1_ENDPOINT + i, 0);
 				vSetBulbState(BULB_NUM_MONO(i),
 						      sLightMono[i].sOnOffServerCluster.bOnOff,
 						      sLightMono[i].sLevelControlServerCluster.u8CurrentLevel);
@@ -636,7 +636,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				sIdEffectRGB[u8Index].u8Green = 0;
 				sIdEffectRGB[u8Index].u8Blue = 0;
 				sIdEffectRGB[u8Index].bFinish = FALSE;
-				APP_ZCL_vSetIdentifyTime(2);
+				APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 2);
 				sIdEffectRGB[u8Index].u8Tick = 10;
 				break;
 			case E_CLD_IDENTIFY_EFFECT_BREATHE:
@@ -649,7 +649,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 						                  &sIdEffectRGB[u8Index].u8Red,
 						                  &sIdEffectRGB[u8Index].u8Green,
 						                  &sIdEffectRGB[u8Index].u8Blue);
-				APP_ZCL_vSetIdentifyTime(17);
+				APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 17);
 				sIdEffectRGB[u8Index].u8Tick = 200;
 				break;
 			case E_CLD_IDENTIFY_EFFECT_OKAY:
@@ -659,7 +659,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				sIdEffectRGB[u8Index].u8Red = 0;
 				sIdEffectRGB[u8Index].u8Green = 255;
 				sIdEffectRGB[u8Index].u8Blue = 0;
-				APP_ZCL_vSetIdentifyTime(2);
+				APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 2);
 				sIdEffectRGB[u8Index].u8Tick = 10;
 				break;
 			case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
@@ -669,7 +669,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				sIdEffectRGB[u8Index].u8Green = 127;
 				sIdEffectRGB[u8Index].u8Blue = 4;
 				sIdEffectRGB[u8Index].bFinish = FALSE;
-				APP_ZCL_vSetIdentifyTime(9);
+				APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 9);
 				sIdEffectRGB[u8Index].u8Tick = 80;
 				break;
 
@@ -682,7 +682,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				break;
 			case E_CLD_IDENTIFY_EFFECT_STOP_EFFECT:
 				sIdEffectRGB[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-				APP_ZCL_vSetIdentifyTime(1);
+				APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 1);
 				break;
 		}
 	}
@@ -699,7 +699,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				sIdEffectMono[u8Index].u8Level = 250;
 			}
 			sIdEffectMono[u8Index].bFinish = FALSE;
-			APP_ZCL_vSetIdentifyTime(2);
+			APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 2);
 			sIdEffectMono[u8Index].u8Tick = 10;
 			break;
 		case E_CLD_IDENTIFY_EFFECT_BREATHE:
@@ -708,7 +708,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 			sIdEffectMono[u8Index].bFinish = FALSE;
 			sIdEffectMono[u8Index].u8Level = 0;
 			sIdEffectMono[u8Index].u8Count = 15;
-			APP_ZCL_vSetIdentifyTime(17);
+			APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 17);
 			sIdEffectMono[u8Index].u8Tick = 200;
 			break;
 		case E_CLD_IDENTIFY_EFFECT_OKAY:
@@ -719,14 +719,14 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 			} else {
 				sIdEffectMono[u8Index].u8Level = 254;
 			}
-			APP_ZCL_vSetIdentifyTime(3);
+			APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 3);
 			sIdEffectMono[u8Index].u8Tick = 15;
 			break;
 		case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
 			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE;
 			sIdEffectMono[u8Index].u8Level = 254;
 			sIdEffectMono[u8Index].bFinish = FALSE;
-			APP_ZCL_vSetIdentifyTime(9);
+			APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 9);
 			sIdEffectMono[u8Index].u8Tick = 80;
 			break;
 
@@ -739,7 +739,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 			break;
 		case E_CLD_IDENTIFY_EFFECT_STOP_EFFECT:
 			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-			APP_ZCL_vSetIdentifyTime(1);
+			APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 1);
 			break;
 	}
 	}
