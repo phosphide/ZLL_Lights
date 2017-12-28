@@ -49,6 +49,7 @@
 #include "zps_apl_af.h"
 
 #include "app_common.h"
+#include "DriverBulb.h"
 
 #include "scenes.h"
 #include "app_scenes.h"
@@ -87,7 +88,7 @@ PRIVATE  bool bCLD_ScenesSearchForScene(void *pvSearchParam, void *psNodeUnderTe
 /***        Local Variables                                               ***/
 /****************************************************************************/
 #if (defined CLD_SCENES) && (defined SCENES_SERVER)
-PRIVATE tsAPP_ScenesCustomData sScenesCustomData;
+PRIVATE tsAPP_ScenesCustomData sScenesCustomData[NUM_BULBS];
 #endif
 
 
@@ -109,47 +110,58 @@ PRIVATE tsAPP_ScenesCustomData sScenesCustomData;
  ****************************************************************************/
 PUBLIC void vSaveScenesNVM(void)
 {
-    uint8 i=0, j=0;
+    uint8 i=0, j=0, u8Bulb;
     tsCLD_ScenesTableEntry *psTableEntry;
     tsSearchParameter sSearchParameter;
 
-    // TODO: save scene data for all lights
-
-    for(i=0; i<CLD_SCENES_MAX_NUMBER_OF_SCENES; i++)
+    for (u8Bulb = 0; u8Bulb < NUM_BULBS; u8Bulb++)
     {
-        /* Find for valid scene */
-        sSearchParameter.u8SearchOptions = (SCENES_SEARCH_GROUP_ID|SCENES_SEARCH_SCENE_ID);
-        sSearchParameter.u16GroupId = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16GroupId;
-        sSearchParameter.u8SceneId  = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u8SceneId;
-        psTableEntry = (tsCLD_ScenesTableEntry*)psDLISTsearchFromHead(&sLightRGB[0].sScenesServerCustomDataStructure.lScenesAllocList,
-                                                                        bCLD_ScenesSearchForScene, (void*)&sSearchParameter);
+    	tsCLD_ScenesCustomDataStructure *ptsCLD_Data;
 
-        /* GroupId 0 really does not exist; it's for ZLL GlobalScene */
-    #if (defined CLD_SCENES_SUPPORT_ZLL_ENHANCED_COMMANDS)
-        if((psTableEntry==NULL) || (sSearchParameter.u16GroupId == 0 && i != 0))
-    #else
-        if((psTableEntry==NULL) || (sSearchParameter.u16GroupId == 0))
-    #endif
-        {
-            sScenesCustomData.asScenesCustomTableEntry[i].bIsSceneValid = FALSE;
-        }
-        else
-        {
-            sScenesCustomData.asScenesCustomTableEntry[i].bIsSceneValid = TRUE;
-            sScenesCustomData.asScenesCustomTableEntry[i].u16GroupId = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16GroupId;
-            sScenesCustomData.asScenesCustomTableEntry[i].u8SceneId = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u8SceneId;
-            sScenesCustomData.asScenesCustomTableEntry[i].u16TransitionTime = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16TransitionTime;
-            sScenesCustomData.asScenesCustomTableEntry[i].u16SceneDataLength = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16SceneDataLength;
-            for(j=0; j<CLD_SCENES_MAX_SCENE_STORAGE_BYTES; j++)
-            {
-                sScenesCustomData.asScenesCustomTableEntry[i].au8SceneData[j] = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].au8SceneData[j];
-            }
-            #ifdef CLD_SCENES_SUPPORT_ZLL_ENHANCED_COMMANDS
-                sScenesCustomData.asScenesCustomTableEntry[i].u8TransitionTime100ms = sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u8TransitionTime100ms;
-            #endif
-        }
+    	if (u8Bulb < NUM_MONO_LIGHTS)
+    	{
+    		ptsCLD_Data = &(sLightMono[u8Bulb].sScenesServerCustomDataStructure);
+    	}
+    	else
+    	{
+    		ptsCLD_Data = &(sLightRGB[u8Bulb - NUM_MONO_LIGHTS].sScenesServerCustomDataStructure);
+    	}
+		for(i=0; i<CLD_SCENES_MAX_NUMBER_OF_SCENES; i++)
+		{
+			/* Find for valid scene */
+			sSearchParameter.u8SearchOptions = (SCENES_SEARCH_GROUP_ID|SCENES_SEARCH_SCENE_ID);
+			sSearchParameter.u16GroupId = ptsCLD_Data->asScenesTableEntry[i].u16GroupId;
+			sSearchParameter.u8SceneId  = ptsCLD_Data->asScenesTableEntry[i].u8SceneId;
+			psTableEntry = (tsCLD_ScenesTableEntry*)psDLISTsearchFromHead(&(ptsCLD_Data->lScenesAllocList),
+																			bCLD_ScenesSearchForScene, (void*)&sSearchParameter);
+
+			/* GroupId 0 really does not exist; it's for ZLL GlobalScene */
+		#if (defined CLD_SCENES_SUPPORT_ZLL_ENHANCED_COMMANDS)
+			if((psTableEntry==NULL) || (sSearchParameter.u16GroupId == 0 && i != 0))
+		#else
+			if((psTableEntry==NULL) || (sSearchParameter.u16GroupId == 0))
+		#endif
+			{
+				sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].bIsSceneValid = FALSE;
+			}
+			else
+			{
+				sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].bIsSceneValid = TRUE;
+				sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u16GroupId = ptsCLD_Data->asScenesTableEntry[i].u16GroupId;
+				sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u8SceneId = ptsCLD_Data->asScenesTableEntry[i].u8SceneId;
+				sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u16TransitionTime = ptsCLD_Data->asScenesTableEntry[i].u16TransitionTime;
+				sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u16SceneDataLength = ptsCLD_Data->asScenesTableEntry[i].u16SceneDataLength;
+				for(j=0; j<CLD_SCENES_MAX_SCENE_STORAGE_BYTES; j++)
+				{
+					sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].au8SceneData[j] = ptsCLD_Data->asScenesTableEntry[i].au8SceneData[j];
+				}
+				#ifdef CLD_SCENES_SUPPORT_ZLL_ENHANCED_COMMANDS
+					sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u8TransitionTime100ms = ptsCLD_Data->asScenesTableEntry[i].u8TransitionTime100ms;
+				#endif
+			}
+		}
     }
-    PDM_eSaveRecordData(PDM_ID_APP_SCENES_DATA,&sScenesCustomData,sizeof(tsAPP_ScenesCustomData));
+    PDM_eSaveRecordData(PDM_ID_APP_SCENES_DATA, &sScenesCustomData, sizeof(sScenesCustomData));
 }
 
 PRIVATE  bool bCLD_ScenesSearchForScene(void *pvSearchParam, void *psNodeUnderTest)
@@ -185,47 +197,60 @@ PRIVATE  bool bCLD_ScenesSearchForScene(void *pvSearchParam, void *psNodeUnderTe
  ****************************************************************************/
 PUBLIC void vLoadScenesNVM(void)
 {
-    uint8 i=0,j=0;
+    uint8 i=0, j=0, u8Bulb;
     uint16 u16ByteRead;
 
     PDM_eReadDataFromRecord(PDM_ID_APP_SCENES_DATA,
                             &sScenesCustomData,
-                            sizeof(tsAPP_ScenesCustomData), &u16ByteRead);
+                            sizeof(sScenesCustomData),
+                            &u16ByteRead);
 
-    // TODO: load scene data for all lights
+    for (u8Bulb = 0; u8Bulb < NUM_BULBS; u8Bulb++)
+	{
+    	tsCLD_ScenesCustomDataStructure *ptsCLD_Data;
 
-    /* initialise lists */
-    vDLISTinitialise(&sLightRGB[0].sScenesServerCustomDataStructure.lScenesAllocList);
-    vDLISTinitialise(&sLightRGB[0].sScenesServerCustomDataStructure.lScenesDeAllocList);
+    	if (u8Bulb < NUM_MONO_LIGHTS)
+		{
+			ptsCLD_Data = &(sLightMono[u8Bulb].sScenesServerCustomDataStructure);
+		}
+		else
+		{
+			ptsCLD_Data = &(sLightRGB[u8Bulb - NUM_MONO_LIGHTS].sScenesServerCustomDataStructure);
+		}
 
-#if (defined CLD_SCENES) && (defined SCENES_SERVER)
-    for(i=0; i<CLD_SCENES_MAX_NUMBER_OF_SCENES; i++)
-    {
-        /* Rebuild the scene list to avoid scene loss after re-flashing */
-        if(sScenesCustomData.asScenesCustomTableEntry[i].bIsSceneValid == TRUE)
-        {
-            vDLISTaddToTail(&sLightRGB[0].sScenesServerCustomDataStructure.lScenesAllocList,
-                            (DNODE *)&sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i]);
-        }
-        else
-        {
-            vDLISTaddToTail(&sLightRGB[0].sScenesServerCustomDataStructure.lScenesDeAllocList,
-                            (DNODE *)&sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i]);
-        }
-        
-        sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16GroupId = sScenesCustomData.asScenesCustomTableEntry[i].u16GroupId;
-        sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u8SceneId = sScenesCustomData.asScenesCustomTableEntry[i].u8SceneId;
-        sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16TransitionTime = sScenesCustomData.asScenesCustomTableEntry[i].u16TransitionTime;
-        sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u16SceneDataLength = sScenesCustomData.asScenesCustomTableEntry[i].u16SceneDataLength;
-        for(j=0; j<CLD_SCENES_MAX_SCENE_STORAGE_BYTES; j++)
-        {
-        	sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].au8SceneData[j] = sScenesCustomData.asScenesCustomTableEntry[i].au8SceneData[j];
-        }
-    #ifdef CLD_SCENES_SUPPORT_ZLL_ENHANCED_COMMANDS
-        sLightRGB[0].sScenesServerCustomDataStructure.asScenesTableEntry[i].u8TransitionTime100ms = sScenesCustomData.asScenesCustomTableEntry[i].u8TransitionTime100ms;
-    #endif
-    }
-#endif
+		/* initialise lists */
+		vDLISTinitialise(&(ptsCLD_Data->lScenesAllocList));
+		vDLISTinitialise(&(ptsCLD_Data->lScenesDeAllocList));
+
+	#if (defined CLD_SCENES) && (defined SCENES_SERVER)
+		for(i=0; i<CLD_SCENES_MAX_NUMBER_OF_SCENES; i++)
+		{
+			/* Rebuild the scene list to avoid scene loss after re-flashing */
+			if(sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].bIsSceneValid == TRUE)
+			{
+				vDLISTaddToTail(&(ptsCLD_Data->lScenesAllocList),
+								(DNODE *)&(ptsCLD_Data->asScenesTableEntry[i]));
+			}
+			else
+			{
+				vDLISTaddToTail(&(ptsCLD_Data->lScenesDeAllocList),
+								(DNODE *)&(ptsCLD_Data->asScenesTableEntry[i]));
+			}
+
+			ptsCLD_Data->asScenesTableEntry[i].u16GroupId = sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u16GroupId;
+			ptsCLD_Data->asScenesTableEntry[i].u8SceneId = sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u8SceneId;
+			ptsCLD_Data->asScenesTableEntry[i].u16TransitionTime = sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u16TransitionTime;
+			ptsCLD_Data->asScenesTableEntry[i].u16SceneDataLength = sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u16SceneDataLength;
+			for(j=0; j<CLD_SCENES_MAX_SCENE_STORAGE_BYTES; j++)
+			{
+				ptsCLD_Data->asScenesTableEntry[i].au8SceneData[j] = sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].au8SceneData[j];
+			}
+		#ifdef CLD_SCENES_SUPPORT_ZLL_ENHANCED_COMMANDS
+			ptsCLD_Data->asScenesTableEntry[i].u8TransitionTime100ms = sScenesCustomData[u8Bulb].asScenesCustomTableEntry[i].u8TransitionTime100ms;
+		#endif
+		}
+	#endif
+	}
 }
 #endif
 
@@ -243,11 +268,20 @@ PUBLIC void vLoadScenesNVM(void)
  ****************************************************************************/
 PUBLIC void vRemoveAllGroupsAndScenes(void)
 {
-	// TODO: remove all scenes/groups for all lights
-    eCLD_GroupsRemoveAllGroups(&sLightRGB[0].sEndPoint,
-                               &sLightRGB[0].sClusterInstance.sGroupsServer,
-                               (uint64)0xffffffffffffffffLL);
+	uint8 i;
 
+	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	{
+		eCLD_GroupsRemoveAllGroups(&sLightMono[i].sEndPoint,
+								   &sLightMono[i].sClusterInstance.sGroupsServer,
+								   (uint64)0xffffffffffffffffLL);
+	}
+	for (i = 0; i < NUM_RGB_LIGHTS; i++)
+	{
+		eCLD_GroupsRemoveAllGroups(&sLightRGB[i].sEndPoint,
+								   &sLightRGB[i].sClusterInstance.sGroupsServer,
+								   (uint64)0xffffffffffffffffLL);
+	}
 }
 #endif
 

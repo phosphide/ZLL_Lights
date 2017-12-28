@@ -177,8 +177,10 @@ PUBLIC void APP_ZCL_vInitialise(void)
     }
 
 #ifdef CLD_COLOUR_CONTROL
-    // TODO: do for all lights
-    //DBG_vPrintf(TRACE_LIGHT_TASK, "Capabilities %04x\n", sLight.sColourControlServerCluster.u16ColourCapabilities);
+    for (i = 0; i < NUM_RGB_LIGHTS; i++)
+    {
+    	DBG_vPrintf(TRACE_LIGHT_TASK, "Capabilities %04x\n", sLightRGB[i].sColourControlServerCluster.u16ColourCapabilities);
+    }
 #endif
 
     #ifdef CLD_LEVEL_CONTROL
@@ -369,7 +371,7 @@ PRIVATE void APP_ZCL_cbGeneralCallback(tsZCL_CallBackEvent *psEvent)
         break;
 
     case E_ZCL_CBET_ERROR:
-        DBG_vPrintf(TRACE_ZCL, "\nEVT: Error");
+        DBG_vPrintf(TRACE_ZCL, "\nEVT: Error %d", psEvent->eZCL_Status);
         break;
 
     case E_ZCL_CBET_TIMER:
@@ -416,7 +418,13 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
     #endif
     //DBG_vPrintf(TRACE_ZCL, "\nEntering cbZCL_EndpointCallback");
 
-    bEndPointToNum(psEvent->u8EndPoint, &bIsRGB, &u8Index);
+	if (((psEvent->u8EndPoint >= MULTILIGHT_LIGHT_MONO_1_ENDPOINT)
+		  && (psEvent->u8EndPoint < (MULTILIGHT_LIGHT_MONO_1_ENDPOINT + NUM_MONO_LIGHTS)))
+		 || ((psEvent->u8EndPoint >= MULTILIGHT_LIGHT_RGB_1_ENDPOINT)
+		  && (psEvent->u8EndPoint < (MULTILIGHT_LIGHT_RGB_1_ENDPOINT + NUM_RGB_LIGHTS))))
+	{
+		bEndPointToNum(psEvent->u8EndPoint, &bIsRGB, &u8Index);
+	}
 
     switch (psEvent->eEventType)
     {
