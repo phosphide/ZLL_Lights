@@ -358,6 +358,7 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 			if (u8Brightness[i] >= CLD_LEVELCONTROL_MAX_LEVEL)
 			{
 				PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x10); // full ON
+				PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, 0x00); // disable full OFF
 			}
 			else
 			{
@@ -388,6 +389,8 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 		{
 			u8Channel = u8ChannelMap[u8Bulb * 3 + i];
 			PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, 0x10); // full OFF
+			PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x00); // disable full ON
+
 		}
 	}
 
