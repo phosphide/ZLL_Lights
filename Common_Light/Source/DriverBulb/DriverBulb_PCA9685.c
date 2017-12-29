@@ -45,6 +45,7 @@
 /****************************************************************************/
 PRIVATE void DriverBulb_vOutput(uint8 u8Bulb);
 PRIVATE void PCA9685_vWriteRegister(uint8 u8Reg, uint8 u8Data);
+PRIVATE void PCA9685_vWriteRegisterMulti(uint8 u8Reg, uint8 *pu8Data, uint8 u8Len);
 
 /****************************************************************************/
 /***        Local Variables                                               ***/
@@ -103,10 +104,18 @@ PUBLIC void DriverBulb_vInit(void)
 		 * operates at 400 kHz */
 		vAHI_SiMasterConfigure(TRUE, FALSE, 7);
 
+		/* Put PCA9685 into SLEEP mode, before setting pre-scale register. */
+		PCA9685_vWriteRegister(REG_MODE1, 0x10);
+
+		/* Set pre-scale value to the minimum value of 3. With an internal
+		 * oscillator of 25 MHz, this should result in a PWM frequency of
+		 * 1526 Hz. */
+		PCA9685_vWriteRegister(REG_PRE_SCALE, 0x03);
+
 		/* Initialize PCA9685 by taking it out of SLEEP mode - other options are:
-		 * restart disabled, use internal clock, no register auto-increment,
+		 * restart disabled, use internal clock, register auto-increment enabled,
 		 * I2C subaddresses/all call disabled */
-		PCA9685_vWriteRegister(REG_MODE1, 0x00);
+		PCA9685_vWriteRegister(REG_MODE1, 0x20);
 
 		/* Ensure that PCA9685 outputs are configured to be push-pull */
 		PCA9685_vWriteRegister(REG_MODE2, 0x04);
@@ -115,7 +124,7 @@ PUBLIC void DriverBulb_vInit(void)
 		for (i = 0; i < NUM_BULBS; i++)
 		{
 			bIsOn[i] = TRUE;
-			u8CurrLevel[i] = 255;
+			u8CurrLevel[i] = CLD_LEVELCONTROL_MAX_LEVEL;
 			u8CurrRed[i] = 255;
 			u8CurrGreen[i] = 255;
 			u8CurrBlue[i] = 255;
@@ -236,9 +245,9 @@ PUBLIC void DriverBulb_vSetLevel(uint8 u8Bulb, uint32 u32Level)
 	if (u8CurrLevel[u8Bulb] != (uint8) u32Level)
 	{
 		/* Note the new level */
-		if (u32Level > 255)
+		if (u32Level > CLD_LEVELCONTROL_MAX_LEVEL)
 		{
-			u8CurrLevel[u8Bulb] = 255;
+			u8CurrLevel[u8Bulb] = CLD_LEVELCONTROL_MAX_LEVEL;
 		}
 		else
 		{
@@ -316,6 +325,7 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 	uint8   u8Channel;
 	uint8   u8NumChannels;
 	bool_t  bIsRGB;
+	uint8   u8Data[4];
 
 	bIsRGB = u8Bulb >= NUM_MONO_LIGHTS;
 	u8NumChannels = bIsRGB ? 3 : 1;
@@ -340,18 +350,36 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 
 		for (i = 0; i < u8NumChannels; i++)
 		{
-			/* Don't allow fully off */
+			/* Don't allow fully off, as PCA9685 doesn't like it when the
+			 * ON and OFF count registers are the same */
 			if (u8Brightness[i] == 0) u8Brightness[i] = 1;
 			/* Determine which channel of PCA9685 to adjust */
 			u8Channel = u8ChannelMap[u8Bulb * 3 + i];
-			/* Set PWM duty cycle */
-			u16PWM = (uint16)u8Brightness[i] << 4;
-			/* TODO: add channel-dependent offset to ON/OFF times so that power supply
-			 * isn't hammered at count = 0. */
-			PCA9685_vWriteRegister(REG_LEDx_ON_L + u8Channel * REG_LEDx_STRIDE, 0x00);
-			PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x00);
-			PCA9685_vWriteRegister(REG_LEDx_OFF_L + u8Channel * REG_LEDx_STRIDE, (uint8_t)u16PWM);
-			PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, (uint8_t)((u16PWM >> 8) & 0x0f));
+			if (u8Brightness[i] >= CLD_LEVELCONTROL_MAX_LEVEL)
+			{
+				PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x10); // full ON
+			}
+			else
+			{
+				uint16 u16On, u16Off;
+
+				/* Set PWM duty cycle */
+				u16PWM = (uint16)u8Brightness[i] << 4;
+				/* Add a channel-dependent offset to ON/OFF times so that the
+				 * power supply isn't hammered at count = 0 */
+				u16On = (uint16)u8Channel * 256;
+				u16Off = (u16On + u16PWM) & 0xfff;
+				u8Data[0] = (uint8_t)u16On;                   /* REG_LEDx_ON_L */
+				u8Data[1] = (uint8_t)((u16On >> 8) & 0x0f);   /* REG_LEDx_ON_H */
+				u8Data[2] = (uint8_t)u16Off;                  /* REG_LEDx_OFF_L */
+				u8Data[3] = (uint8_t)((u16Off >> 8) & 0x0f);  /* REG_LEDx_OFF_H */
+				/* Write ON/OFF registers using a multi-register write.
+				 * This is necessary because the PCA9685 outputs will change
+				 * at the end of an I2C transfer. So all registers should be
+				 * written in one transfer, so that the channel doesn't glitch
+				 * during writes. */
+				PCA9685_vWriteRegisterMulti(REG_LEDx_ON_L + u8Channel * REG_LEDx_STRIDE, u8Data, sizeof(u8Data));
+			}
 		}
 	}
 	else /* Turn off */
@@ -396,3 +424,48 @@ PRIVATE void PCA9685_vWriteRegister(uint8 u8Reg, uint8 u8Data)
 	while (bAHI_SiMasterPollTransferInProgress());
 }
 
+/****************************************************************************
+ *
+ * NAME:       		PCA9685_vWriteRegisterMulti
+ *
+ * DESCRIPTION:		Writes to one or more of the PCA9685's registers
+ *
+ *
+ * PARAMETERS:      Name     RW  Usage
+ *         	        u8Reg    R   First register number to write to
+ *         	        pu8Data  R   Pointer to array of register values
+ *         	        u8Len    R   Number of registers to write to
+ *
+ * RETURNS:
+ * void
+ *
+ ****************************************************************************/
+PRIVATE void PCA9685_vWriteRegisterMulti(uint8 u8Reg, uint8 *pu8Data, uint8 u8Len)
+{
+	uint8 i;
+
+	vAHI_SiMasterWriteSlaveAddr(PCA9685_ADDRESS, FALSE);
+	/* START, WRITE, ACK */
+	bAHI_SiMasterSetCmdReg(TRUE, FALSE, FALSE, TRUE, TRUE, FALSE);
+	while (bAHI_SiMasterPollTransferInProgress());
+	vAHI_SiMasterWriteData8(u8Reg);
+	/* WRITE, ACK */
+	bAHI_SiMasterSetCmdReg(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE);
+	while (bAHI_SiMasterPollTransferInProgress());
+	for (i = 0; i < u8Len; i++)
+	{
+		vAHI_SiMasterWriteData8(pu8Data[i]);
+		if (i == (u8Len - 1))
+		{
+			/* Last byte */
+			/* STOP, WRITE, ACK */
+			bAHI_SiMasterSetCmdReg(FALSE, TRUE, FALSE, TRUE, TRUE, FALSE);
+		}
+		else
+		{
+			/* WRITE, ACK */
+			bAHI_SiMasterSetCmdReg(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE);
+		}
+		while (bAHI_SiMasterPollTransferInProgress());
+	}
+}
