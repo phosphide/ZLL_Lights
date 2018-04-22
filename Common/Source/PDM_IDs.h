@@ -59,6 +59,7 @@ extern "C" {
 #define PDM_ID_APP_ZLL_ROUTER       0x6
 #define PDM_ID_APP_SCENES_DATA      0x9
 #define PDM_ID_OTA_DATA             0xA
+#define PDM_ID_APP_LIGHT_CALIB		0xB
 
 #else
 

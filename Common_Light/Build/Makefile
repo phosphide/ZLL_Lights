@@ -209,6 +209,7 @@ ifeq ($(OTA),1)
 APPSRC += app_ota_client.c
 endif
 APPSRC += app_light_interpolation.c
+APPSRC += app_light_calibration.c
 APPSRC += appZpsBeaconHandler.c
 
 #Light device type and it's associated driver 

@@ -46,6 +46,7 @@
 #include <string.h>
 
 #include "app_light_interpolation.h"
+#include "app_light_calibration.h"
 #include "DriverBulb.h"
 
 
@@ -314,6 +315,9 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 		sIdEffectRGB[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
 		sIdEffectRGB[i].u8Tick = 0;
 	}
+
+	/* Load device-specific calibration values from NVM */
+	vLC_LoadCalibrationFromNVM();
 }
 
 /****************************************************************************
