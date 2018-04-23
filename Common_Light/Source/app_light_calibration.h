@@ -46,11 +46,21 @@
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
+/****************************************************************************/
+typedef enum
+{
+	BULB_WHITE = 0,
+	BULB_RED = 0,
+	BULB_GREEN = 1,
+	BULB_BLUE = 2
+} teColour;
 
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 
+PUBLIC void vLC_InitSerialInterface(void);
+PUBLIC uint8 u8LC_GetChannel(uint8 u8Bulb, teColour eColour);
 PUBLIC void vLC_LoadCalibrationFromNVM(void);
 PUBLIC void vLC_SaveCalibrationToNVM(void);
 PUBLIC uint32 u32LC_AdjustIntensity(uint8 u8Intensity, uint8 u8ChannelNum);

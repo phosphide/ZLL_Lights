@@ -14,6 +14,7 @@
 #include <string.h>
 #include "App_MultiLight.h"
 #include "DriverBulb.h"
+#include "app_light_calibration.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -43,7 +44,6 @@
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
 /****************************************************************************/
-PRIVATE void DriverBulb_vOutput(uint8 u8Bulb);
 PRIVATE void PCA9685_vWriteRegister(uint8 u8Reg, uint8 u8Data);
 PRIVATE void PCA9685_vWriteRegisterMulti(uint8 u8Reg, uint8 *pu8Data, uint8 u8Len);
 
@@ -55,16 +55,6 @@ PRIVATE uint8   u8CurrLevel[NUM_BULBS];
 PRIVATE uint8   u8CurrRed[NUM_BULBS];
 PRIVATE uint8   u8CurrGreen[NUM_BULBS];
 PRIVATE uint8   u8CurrBlue[NUM_BULBS];
-
-/* Map of bulbs to PCA9685 channels. */
-PRIVATE const uint8 u8ChannelMap[NUM_BULBS * 3] = {
-		7,   255, 255,  /* W1 */
-		6,   255, 255,  /* W2 */
-		5,   255, 255,  /* W3 */
-		4,   3,   2,    /* R1, G1, B1 */
-		1,   0,   11,   /* R2, G2, B2 */
-		10,  9,   8     /* R3, G3, B3 */
-};
 
 /****************************************************************************/
 /***        Exported Functions                                            ***/
@@ -299,10 +289,6 @@ PUBLIC void DriverBulb_vSetColour(uint8 u8Bulb, uint32 u32Red, uint32 u32Green, 
 	}
 }
 
-/****************************************************************************/
-/***        Local Functions                                               ***/
-/****************************************************************************/
-
 /****************************************************************************
  *
  * NAME:			DriverBulb_vOutput
@@ -316,13 +302,13 @@ PUBLIC void DriverBulb_vSetColour(uint8 u8Bulb, uint32 u32Red, uint32 u32Green, 
  * RETURNS:         void
  *
  ****************************************************************************/
-PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
+PUBLIC void DriverBulb_vOutput(uint8 u8Bulb)
 {
 	uint32  v;
 	uint16  u16PWM;
 	uint8   u8Brightness[3];
 	int8    i;
-	uint8   u8Channel;
+	uint8   u8Channel[3];
 	uint8   u8NumChannels;
 	bool_t  bIsRGB;
 	uint8   u8Data[4];
@@ -338,14 +324,18 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 			/* Scale colour for brightness level */
 			v = (uint32)u8CurrRed[u8Bulb] * (uint32)u8CurrLevel[u8Bulb];
 			u8Brightness[0] = (uint8)FAST_DIV_BY_255(v);
+			u8Channel[0] = u8LC_GetChannel(u8Bulb, BULB_RED);
 			v = (uint32)u8CurrGreen[u8Bulb] * (uint32)u8CurrLevel[u8Bulb];
 			u8Brightness[1] = (uint8)FAST_DIV_BY_255(v);
+			u8Channel[1] = u8LC_GetChannel(u8Bulb, BULB_GREEN);
 			v = (uint32)u8CurrBlue[u8Bulb] * (uint32)u8CurrLevel[u8Bulb];
 			u8Brightness[2] = (uint8)FAST_DIV_BY_255(v);
+			u8Channel[2] = u8LC_GetChannel(u8Bulb, BULB_BLUE);
 		}
 		else
 		{
 			u8Brightness[0] = u8CurrLevel[u8Bulb];
+			u8Channel[0] = u8LC_GetChannel(u8Bulb, BULB_WHITE);
 		}
 
 		for (i = 0; i < u8NumChannels; i++)
@@ -353,22 +343,22 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 			/* Don't allow fully off, as PCA9685 doesn't like it when the
 			 * ON and OFF count registers are the same */
 			if (u8Brightness[i] == 0) u8Brightness[i] = 1;
-			/* Determine which channel of PCA9685 to adjust */
-			u8Channel = u8ChannelMap[u8Bulb * 3 + i];
-			if (u8Brightness[i] >= CLD_LEVELCONTROL_MAX_LEVEL)
+			/* Set PWM duty cycle */
+			u16PWM = (uint16)u32LC_AdjustIntensity(u8Brightness[i], u8Channel[i]);
+			if (u16PWM >= 4095)
 			{
-				PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x10); // full ON
-				PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, 0x00); // disable full OFF
+				/* Use full ON mode */
+				PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel[i] * REG_LEDx_STRIDE, 0x10); // full ON
+				PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel[i] * REG_LEDx_STRIDE, 0x00); // disable full OFF
 			}
 			else
 			{
+				/* Use PWM mode */
 				uint16 u16On, u16Off;
 
-				/* Set PWM duty cycle */
-				u16PWM = (uint16)u8Brightness[i] << 4;
 				/* Add a channel-dependent offset to ON/OFF times so that the
 				 * power supply isn't hammered at count = 0 */
-				u16On = (uint16)u8Channel * 256;
+				u16On = (uint16)u8Channel[i] * 256;
 				u16Off = (u16On + u16PWM) & 0xfff;
 				u8Data[0] = (uint8_t)u16On;                   /* REG_LEDx_ON_L */
 				u8Data[1] = (uint8_t)((u16On >> 8) & 0x0f);   /* REG_LEDx_ON_H */
@@ -379,22 +369,34 @@ PRIVATE void DriverBulb_vOutput(uint8 u8Bulb)
 				 * at the end of an I2C transfer. So all registers should be
 				 * written in one transfer, so that the channel doesn't glitch
 				 * during writes. */
-				PCA9685_vWriteRegisterMulti(REG_LEDx_ON_L + u8Channel * REG_LEDx_STRIDE, u8Data, sizeof(u8Data));
+				PCA9685_vWriteRegisterMulti(REG_LEDx_ON_L + u8Channel[i] * REG_LEDx_STRIDE, u8Data, sizeof(u8Data));
 			}
 		}
 	}
 	else /* Turn off */
 	{
+		if (bIsRGB)
+		{
+			u8Channel[0] = u8LC_GetChannel(u8Bulb, BULB_RED);
+			u8Channel[1] = u8LC_GetChannel(u8Bulb, BULB_GREEN);
+			u8Channel[2] = u8LC_GetChannel(u8Bulb, BULB_BLUE);
+		}
+		else
+		{
+			u8Channel[0] = u8LC_GetChannel(u8Bulb, BULB_WHITE);
+		}
 		for (i = 0; i < u8NumChannels; i++)
 		{
-			u8Channel = u8ChannelMap[u8Bulb * 3 + i];
-			PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel * REG_LEDx_STRIDE, 0x10); // full OFF
-			PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel * REG_LEDx_STRIDE, 0x00); // disable full ON
-
+			PCA9685_vWriteRegister(REG_LEDx_OFF_H + u8Channel[i] * REG_LEDx_STRIDE, 0x10); // full OFF
+			PCA9685_vWriteRegister(REG_LEDx_ON_H + u8Channel[i] * REG_LEDx_STRIDE, 0x00); // disable full ON
 		}
 	}
 
 }
+
+/****************************************************************************/
+/***        Local Functions                                               ***/
+/****************************************************************************/
 
 /****************************************************************************
  *

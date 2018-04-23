@@ -296,6 +296,9 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 {
 	unsigned int i;
 
+	/* Initialise serial control interface */
+	vLC_InitSerialInterface();
+
     /* Initialize the strings in Basic */
 	for (i = 0; i < NUM_MONO_LIGHTS; i++)
 	{

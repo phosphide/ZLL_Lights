@@ -70,6 +70,7 @@ PUBLIC bool_t		DriverBulb_bOn(uint8 u8Bulb);
 PUBLIC void 	 	DriverBulb_vSetLevel(uint8 u8Bulb, uint32 u32Level);
 PUBLIC void         DriverBulb_vSetOnOff(uint8 u8Bulb, bool_t bOn);
 PUBLIC void         DriverBulb_vSetColour(uint8 u8Bulb, uint32 u32Red, uint32 u32Green, uint32 u32Blue);
+PUBLIC void	        DriverBulb_vOutput(uint8 u8Bulb);
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
