@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name zll_lib)(type KiCad)(uri "$(KIPRJMOD)/zll_lib.pretty")(options "")(descr ""))
+)
