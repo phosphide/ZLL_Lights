@@ -33,6 +33,8 @@
 
 LIGHT ?= Light_ExtendedColorLight
 
+VARIANT ?= Standard
+
 # Application target name
 TARGET = $(LIGHT)
 PDM_BUILD_TYPE ?=_EEPROM
@@ -80,6 +82,9 @@ CFLAGS  += -DRTOS
 
 # Tell the code what target hardware is  
 CFLAGS  += -D$(DR)
+
+# Tell the code which variant we're compiling for
+CFLAGS  += -DVARIANT=$(VARIANT)
 
 ###############################################################################
 # Select the network stack (e.g. MAC, ZBPro, SE, HA)

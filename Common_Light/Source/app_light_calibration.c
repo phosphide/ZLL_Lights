@@ -70,14 +70,31 @@
 /* Maximum size of configuration line, in number of characters */
 #define MAX_LINE_SIZE			40
 
+/* Convert preprocessor definition x to string literal. Both of these are
+ * necessary. */
+#define STRINGIFY(x)			#x
+#define TOSTRING(x)				STRINGIFY(x)
+
+#ifndef BOARD_VERSION
+/* Board version string */
+#define BOARD_VERSION			("MultiLight " TOSTRING(VARIANT) " built on " __DATE__ __TIME__)
+#endif
+
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
+
 typedef struct
 {
 	uint16 u16Gamma;
 	uint16 u16Brightness;
-}tsLC_ChannelCalibration;
+} tsLC_ChannelCalibration;
+
+typedef enum
+{
+  CHANNEL_GAMMA,
+  CHANNEL_BRIGHTNESS
+} teChannelSetting;
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -85,9 +102,10 @@ typedef struct
 
 PRIVATE uint32 antilog(uint32 y);
 PRIVATE void vLC_ProcessCommand(char *pcCommand);
+PRIVATE void vLC_WriteChannelStatusToUART(uint8 u8Channel, teChannelSetting teSetting);
 PRIVATE void vLC_WriteStringToUART(const char *pcStr);
-PRIVATE void vLC_UnsignedIntegerToString(unsigned int uValue, char *pcString);
-PRIVATE uint16_t u16LC_StringToUnsignedInteger(const char *pcString, char **pcEndPtr);
+PRIVATE void vLC_WriteUnsignedIntegerToUART(unsigned int uValue);
+PRIVATE uint32_t u32LC_StringToUnsignedInteger(const char *pcString, char **pcEndPtr);
 
 /****************************************************************************/
 /*          Exported Variables                                              */
@@ -308,187 +326,171 @@ PRIVATE uint32 antilog(uint32 y)
 PRIVATE void vLC_ProcessCommand(char *pcCommand)
 {
 	uint32 u32ChannelMask = 0; /* bit n set means that channel is selected */
+	uint32 u32Parameter = 0;
 	char *pcCommandNext = pcCommand; /* pointer to start of command */
-	bool bValid = false; /* whether channel specifier is valid */
+	bool bFirst;
 	unsigned int i;
-	uint16 u16Parameter;
-	char acNumberBuffer[16];
 
-	/* Commands take the form: <channel specifier> <command>, so the minimum
-	 * length is 2 characters. */
-	if (strlen(pcCommand) >= 2)
-	{
-		char c = pcCommand[0];
-		unsigned int n;
-
-		if ((c >= '0') && (c <= '9'))
-		{
-			/* Channel specifier is just a number. Interpret that number
-			 * as the raw channel number. */
-			n = u16LC_StringToUnsignedInteger(pcCommand, &pcCommandNext);
-			u32ChannelMask = 1UL << n;
-			bValid = true;
-		}
-		else if (c == '*')
-		{
-			/* Channel specifier is '*', so configure all channels at once. */
-			u32ChannelMask = 0xffffffff;
-			pcCommandNext = pcCommand + 1;
-			bValid = true;
-		}
-		else if ((c == 'r') || (c == 'g') || (c == 'b') || (c == 'w') || (c == 'a'))
-		{
-			/* Channel specifier is something like "r1", "r*" or "w2". We'll
-			 * need to look at what comes after the first letter. */
-			/* 'r' is red, 'g' is green, 'b' is blue, 'w' is white, 'a' is all
-			 * RGB at once. */
-			char c2 = pcCommand[1]; /* c2 = what comes after first letter */
-			uint8 u8Bulb = 0;
-			uint8 u8NumBulbs = 1;
-
-			if ((c2 >= '0') && (c2 <= '9'))
-			{
-				/* Channel specifier is something like "r1", "r2" or "b1".
-				 * We need to read the number n after the first letter. */
-				n = u16LC_StringToUnsignedInteger(&(pcCommand[1]), &pcCommandNext);
-				/* Note that (non raw) channel indices start at 1.
-				 * u16LC_StringToUnsignedInteger will return 0 on error, so
-				 * if n == 0 then the number is invalid. */
-				if (n > 0)
-				{
-					/* Convert to bulb number u8Bulb */
-					if (c == 'w')
-					{
-						u8Bulb = (uint8)(n - 1);
-						if (n <= NUM_MONO_LIGHTS)
-						{
-							bValid = true;
-						}
-					}
-					else
-					{
-						u8Bulb = (uint8)(n + NUM_MONO_LIGHTS - 1);
-						if (n <= NUM_RGB_LIGHTS)
-						{
-							bValid = true;
-						}
-					}
-
-				}
-			}
-			else if (c2 == '*')
-			{
-				/* Channel specifier is something like "r*" or "b*" i.e.
-				 * configure all red channels at once, or all blue
-				 * channels at once (respectively). */
-				pcCommandNext = pcCommand + 2;
-				if (c == 'w')
-				{
-					u8Bulb = 0;
-					u8NumBulbs = NUM_MONO_LIGHTS;
-				}
-				else
-				{
-					u8Bulb = NUM_MONO_LIGHTS;
-					u8NumBulbs = NUM_RGB_LIGHTS;
-				}
-				bValid = true;
-			}
-
-			/* Mark which channels to configure */
-			for (i = 0; i < u8NumBulbs; i++)
-			{
-				if (c == 'a')
-				{
-					/* All components in the group */
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_RED);
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_GREEN);
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_BLUE);
-				}
-				else if (c == 'r')
-				{
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_RED);
-				}
-				else if (c == 'g')
-				{
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_GREEN);
-				}
-				else if (c == 'b')
-				{
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_BLUE);
-				}
-				else if (c == 'w')
-				{
-					u32ChannelMask |= 1UL << u8LC_GetChannel((uint8)(u8Bulb + i), BULB_WHITE);
-				}
-			}
-		}
-	}
-	else
+	if (strlen(pcCommand) < 1)
 	{
 		vLC_WriteStringToUART("Command too short\r\n");
 		return;
 	}
 
-	if (bValid)
+	switch(pcCommand[0])
 	{
-		/* If execution flows to here, that means the channel specifier was
-		 * valid. */
-		char cCommand;
-
-		/* Skip whitespace */
-		while (*pcCommandNext == ' ')
+	case 'g':
+	case 'b':
+		/* Set gamma or brightness */
+		/* Format of command is [g or b] <channel mask> <value> */
+		u32ChannelMask = u32LC_StringToUnsignedInteger(&(pcCommand[1]), &pcCommandNext);
+		u32Parameter = u32LC_StringToUnsignedInteger(pcCommandNext, NULL);
+		bFirst = true;
+		for (i = 0; i < NUM_CHANNELS; i++)
 		{
-			pcCommandNext++;
-		}
-		cCommand = *pcCommandNext;
-		if ((cCommand == 'g') || (cCommand == 'b'))
-		{
-			/* Change gamma or brightness correction */
-			pcCommandNext++;
-			u16Parameter = u16LC_StringToUnsignedInteger(pcCommandNext, NULL);
-			if (u16Parameter != 0)
+			if ((u32ChannelMask >> i) & 1)
 			{
-				for (i = 0; i < NUM_CHANNELS; i++)
+				if (bFirst)
 				{
-					if ((u32ChannelMask >> i) & 1)
-					{
-						vLC_WriteStringToUART("channel ");
-						vLC_UnsignedIntegerToString(i, acNumberBuffer);
-						vLC_WriteStringToUART(acNumberBuffer);
-						if (cCommand == 'g')
-						{
-							vLC_WriteStringToUART(" gamma = ");
-							atsLC_Calibration[i].u16Gamma = u16Parameter;
-						}
-						else if (cCommand == 'b')
-						{
-							vLC_WriteStringToUART(" brightness = ");
-							atsLC_Calibration[i].u16Brightness = u16Parameter;
-						}
-						vLC_UnsignedIntegerToString(u16Parameter, acNumberBuffer);
-						vLC_WriteStringToUART(acNumberBuffer);
-						vLC_WriteStringToUART("\r\n");
-					}
+					bFirst = false;
 				}
-				/* Refresh current PWM values, to account for new calibration
-				 * parameters. */
-				for (i = 0; i < (NUM_MONO_LIGHTS + NUM_RGB_LIGHTS); i++)
+				else
 				{
-					DriverBulb_vOutput((uint8)i);
+					vLC_WriteStringToUART(",");
 				}
-				/* Save calibration, so that it will persist across reset */
-				vLC_SaveCalibrationToNVM();
+				if (pcCommand[0] == 'g')
+				{
+					atsLC_Calibration[i].u16Gamma = u32Parameter;
+					vLC_WriteChannelStatusToUART(i, CHANNEL_GAMMA);
+				}
+				else if (pcCommand[0] == 'b')
+				{
+					atsLC_Calibration[i].u16Brightness = u32Parameter;
+					vLC_WriteChannelStatusToUART(i, CHANNEL_BRIGHTNESS);
+				}
 			}
 		}
-		else
+		vLC_WriteStringToUART("\r\n");
+		/* Refresh current PWM values, to account for new calibration
+		 * parameters. */
+		for (i = 0; i < (NUM_MONO_LIGHTS + NUM_RGB_LIGHTS); i++)
 		{
-			vLC_WriteStringToUART("Invalid command\r\n");
+			DriverBulb_vOutput((uint8)i);
 		}
+		break;
+
+	case 'n':
+		/* Get raw channel names */
+		/* Output will be a series of <raw channel number>=<name> entries,
+		 * separated by ",". */
+		bFirst = true;
+		/* List white channels */
+		for (i = 0; i < NUM_MONO_LIGHTS; i++)
+		{
+			if (bFirst)
+			{
+				bFirst = false;
+			}
+			else
+			{
+				vLC_WriteStringToUART(",");
+			}
+			vLC_WriteUnsignedIntegerToUART(u8LC_GetChannel(i, BULB_WHITE));
+			vLC_WriteStringToUART("=White ");
+			vLC_WriteUnsignedIntegerToUART(i + 1);
+		}
+		/* List red/green/blue channels */
+		for (i = 0; i < NUM_RGB_LIGHTS; i++)
+		{
+			if (bFirst)
+			{
+				bFirst = false;
+			}
+			else
+			{
+				vLC_WriteStringToUART(",");
+			}
+			vLC_WriteUnsignedIntegerToUART(u8LC_GetChannel(NUM_MONO_LIGHTS + i, BULB_RED));
+			vLC_WriteStringToUART("=Red ");
+			vLC_WriteUnsignedIntegerToUART(i + 1);
+			vLC_WriteStringToUART(",");
+			vLC_WriteUnsignedIntegerToUART(u8LC_GetChannel(NUM_MONO_LIGHTS + i, BULB_GREEN));
+			vLC_WriteStringToUART("=Green ");
+			vLC_WriteUnsignedIntegerToUART(i + 1);
+			vLC_WriteStringToUART(",");
+			vLC_WriteUnsignedIntegerToUART(u8LC_GetChannel(NUM_MONO_LIGHTS + i, BULB_BLUE));
+			vLC_WriteStringToUART("=Blue ");
+			vLC_WriteUnsignedIntegerToUART(i + 1);
+		}
+		vLC_WriteStringToUART("\r\n");
+		break;
+
+	case 'i':
+		/* Get information about all channels */
+		bFirst = true;
+		for (i = 0; i < NUM_CHANNELS; i++)
+		{
+			if (bFirst)
+			{
+				bFirst = false;
+			}
+			else
+			{
+				vLC_WriteStringToUART(",");
+			}
+			vLC_WriteChannelStatusToUART(i, CHANNEL_GAMMA);
+			vLC_WriteStringToUART(",");
+			vLC_WriteChannelStatusToUART(i, CHANNEL_BRIGHTNESS);
+		}
+		vLC_WriteStringToUART("\r\n");
+		break;
+
+	case 's':
+		/* Save settings to non-volatile memory */
+		vLC_WriteStringToUART("saving\r\n");
+		vLC_SaveCalibrationToNVM();
+		break;
+
+	case 'r':
+		/* Reset board */
+		vLC_WriteStringToUART("resetting\r\n");
+		vAHI_SwReset();
+		break;
+
+	case 'v':
+		/* Get board version */
+		vLC_WriteStringToUART(BOARD_VERSION);
+		vLC_WriteStringToUART("\r\n");
+		break;
+
+	default:
+		vLC_WriteStringToUART("Unknown command\r\n");
+		break;
 	}
-	else
+
+}
+
+/****************************************************************************
+ * NAME:	vLC_WriteChannelStatusToUART
+ *
+ * DESCRIPTION:
+ *			Write channel status to UART. The channel status will be
+ *			reported as <raw channel number>:<setting>=<value> e.g.
+ *			"0:gamma=1024", which means that channel 0 has a gamma setting
+ *			of 1024.
+ ****************************************************************************/
+PRIVATE void vLC_WriteChannelStatusToUART(uint8 u8Channel, teChannelSetting teSetting)
+{
+	vLC_WriteUnsignedIntegerToUART(u8Channel);
+	if (teSetting == CHANNEL_GAMMA)
 	{
-		vLC_WriteStringToUART("Invalid channel specifier\r\n");
+		vLC_WriteStringToUART(":gamma=");
+		vLC_WriteUnsignedIntegerToUART(atsLC_Calibration[u8Channel].u16Gamma);
+	}
+	else if (teSetting == CHANNEL_BRIGHTNESS)
+	{
+		vLC_WriteStringToUART(":brightness=");
+		vLC_WriteUnsignedIntegerToUART(atsLC_Calibration[u8Channel].u16Brightness);
 	}
 }
 
@@ -513,25 +515,28 @@ PRIVATE void vLC_WriteStringToUART(const char *pcStr)
 }
 
 /****************************************************************************
- * NAME:	vLC_UnsignedIntegerToString
+ * NAME:	vLC_WriteUnsignedIntegerToUART
  *
  * DESCRIPTION:
- *			Convert number iValue into null-terminated string, writing to
- *			pcString. The number will be in base-10 representation.
+ *			Convert number iValue into null-terminated string, then write
+ *			that string to the UART. The number will be in base-10
+ *			representation.
  *
  *			This is used instead of printf to reduce RAM use.
  ****************************************************************************/
-PRIVATE void vLC_UnsignedIntegerToString(unsigned int uValue, char *pcString)
+PRIVATE void vLC_WriteUnsignedIntegerToUART(unsigned int uValue)
 {
 	unsigned int uIndex = 0;
 	unsigned int i;
 	unsigned int uRemainder;
 	char cTemp;
+	char acString[16];
 
 	if (uValue == 0)
 	{
-		pcString[0] = '0';
-		pcString[1] = '\0';
+		acString[0] = '0';
+		acString[1] = '\0';
+		vLC_WriteStringToUART(acString);
 		return;
 	}
 
@@ -539,21 +544,22 @@ PRIVATE void vLC_UnsignedIntegerToString(unsigned int uValue, char *pcString)
 	{
 		uRemainder = uValue % 10;
 		uValue = uValue / 10;
-		pcString[uIndex++] = (char)('0' + uRemainder);
+		acString[uIndex++] = (char)('0' + uRemainder);
 	}
 	/* Reverse string */
 	for (i = 0; i < (uIndex >> 1); i++)
 	{
-		cTemp = pcString[i];
-		pcString[i] = pcString[uIndex - 1 - i];
-		pcString[uIndex - 1 - i] = cTemp;
+		cTemp = acString[i];
+		acString[i] = acString[uIndex - 1 - i];
+		acString[uIndex - 1 - i] = cTemp;
 	}
 	/* Null-terminate */
-	pcString[uIndex++] = '\0';
+	acString[uIndex++] = '\0';
+	vLC_WriteStringToUART(acString);
 }
 
 /****************************************************************************
- * NAME:	u16LC_StringToUnsignedInteger
+ * NAME:	u32LC_StringToUnsignedInteger
  *
  * DESCRIPTION:
  *			Convert null-terminated string into unsigned integer, assuming
@@ -564,11 +570,11 @@ PRIVATE void vLC_UnsignedIntegerToString(unsigned int uValue, char *pcString)
  *
  *			This is used instead of sscanf or strtol to reduce RAM use.
  ****************************************************************************/
-PRIVATE uint16_t u16LC_StringToUnsignedInteger(const char *pcString, char **pcEndPtr)
+PRIVATE uint32_t u32LC_StringToUnsignedInteger(const char *pcString, char **pcEndPtr)
 {
-	uint16_t u16Value = 0;
+	uint32_t u32Value = 0;
 
-	/* Skip leading whitespace */
+	/* Skip whitespace */
 	while ((*pcString == ' ') || (*pcString == '\r') || (*pcString == '\n') || (*pcString == '\t'))
 	{
 		pcString++;
@@ -576,8 +582,8 @@ PRIVATE uint16_t u16LC_StringToUnsignedInteger(const char *pcString, char **pcEn
 
 	while ((*pcString >= '0') && (*pcString <= '9'))
 	{
-		u16Value *= 10;
-		u16Value += (uint16)(*pcString - '0');
+		u32Value *= 10;
+		u32Value += (uint32)(*pcString - '0');
 		pcString++;
 	}
 
@@ -585,7 +591,7 @@ PRIVATE uint16_t u16LC_StringToUnsignedInteger(const char *pcString, char **pcEn
 	{
 		*pcEndPtr = (char *)pcString;
 	}
-	return u16Value;
+	return u32Value;
 }
 
 /****************************************************************************/
