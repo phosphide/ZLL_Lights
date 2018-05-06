@@ -47,6 +47,7 @@
 
 #include "app_light_interpolation.h"
 #include "app_light_calibration.h"
+#include "app_temp_sensor.h"
 #include "DriverBulb.h"
 
 
@@ -298,6 +299,9 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 
 	/* Initialise serial control interface */
 	vLC_InitSerialInterface();
+	/* Start measuring board temperature */
+	vTS_InitTempSensor();
+
 
     /* Initialize the strings in Basic */
 	for (i = 0; i < NUM_MONO_LIGHTS; i++)

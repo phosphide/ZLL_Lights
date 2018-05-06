@@ -50,6 +50,7 @@
 #include "PDM_IDs.h"
 #include "os.h"
 #include "app_light_calibration.h"
+#include "app_temp_sensor.h"
 #include "DriverBulb.h"
 
 /****************************************************************************/
@@ -77,7 +78,7 @@
 
 #ifndef BOARD_VERSION
 /* Board version string */
-#define BOARD_VERSION			("MultiLight " TOSTRING(VARIANT) " built on " __DATE__ __TIME__)
+#define BOARD_VERSION			("MultiLight " TOSTRING(VARIANT) " built on " __DATE__ " " __TIME__)
 #endif
 
 /****************************************************************************/
@@ -140,7 +141,7 @@ PRIVATE const uint8 au8ChannelMap[NUM_BULBS * 3] = {
  * NAME: vLC_InitSerialInterface
  *
  * DESCRIPTION:
- * Callback that is invoked whenever UART0 receives a byte
+ * Initialises and configures UART
  ****************************************************************************/
 PUBLIC void vLC_InitSerialInterface(void)
 {
@@ -330,6 +331,7 @@ PRIVATE void vLC_ProcessCommand(char *pcCommand)
 	char *pcCommandNext = pcCommand; /* pointer to start of command */
 	bool bFirst;
 	unsigned int i;
+	int16 i16Temperature;
 
 	if (strlen(pcCommand) < 1)
 	{
@@ -460,6 +462,18 @@ PRIVATE void vLC_ProcessCommand(char *pcCommand)
 	case 'v':
 		/* Get board version */
 		vLC_WriteStringToUART(BOARD_VERSION);
+		vLC_WriteStringToUART("\r\n");
+		break;
+
+	case 't':
+		/* Get board temperature */
+		i16Temperature = i16TS_GetTemperature();
+		if (i16Temperature < 0)
+		{
+			vLC_WriteStringToUART("-");
+			i16Temperature = -i16Temperature;
+		}
+		vLC_WriteUnsignedIntegerToUART((uint16)i16Temperature);
 		vLC_WriteStringToUART("\r\n");
 		break;
 

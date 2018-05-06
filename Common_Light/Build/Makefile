@@ -215,6 +215,7 @@ APPSRC += app_ota_client.c
 endif
 APPSRC += app_light_interpolation.c
 APPSRC += app_light_calibration.c
+APPSRC += app_temp_sensor.c
 APPSRC += appZpsBeaconHandler.c
 
 #Light device type and it's associated driver 
