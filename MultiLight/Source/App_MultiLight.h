@@ -53,12 +53,13 @@
 
 extern tsZLL_DimmableLightDevice sLightMono[NUM_MONO_LIGHTS];
 extern tsZLL_ColourLightDevice sLightRGB[NUM_RGB_LIGHTS];
-extern tsCLD_ZllDeviceTable sDeviceTable;
 
 /****************************************************************************/
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 
+PUBLIC uint8 u8App_GetNumberOfDevices(void);
+PUBLIC tsCLD_ZllDeviceRecord *psApp_GetDeviceRecord(uint8 u8RecordNum);
 PUBLIC teZCL_Status eApp_ZLL_RegisterEndpoint(tfpZCL_ZCLCallBackFunction fptr,
                                        tsZLL_CommissionEndpoint* psCommissionEndpoint);
 PUBLIC bool_t bEndPointToNum(uint8 u8Endpoint, bool_t* bIsRGB, uint8* u8Num);

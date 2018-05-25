@@ -47,6 +47,7 @@
 #include "PDM_IDs.h"
 #include "zcl_options.h"
 #include "zps_apl_af.h"
+#include "app_zcl_light_task.h"
 
 #include "app_common.h"
 #include "DriverBulb.h"
@@ -110,11 +111,20 @@ PRIVATE tsAPP_ScenesCustomData sScenesCustomData[NUM_BULBS];
  ****************************************************************************/
 PUBLIC void vSaveScenesNVM(void)
 {
-    uint8 i=0, j=0, u8Bulb;
+    uint8 i=0, j=0, u8Bulb, u8BulbStart;
     tsCLD_ScenesTableEntry *psTableEntry;
     tsSearchParameter sSearchParameter;
 
-    for (u8Bulb = 0; u8Bulb < NUM_BULBS; u8Bulb++)
+    if (u32ComputedWhiteMode == 0)
+    {
+    	u8BulbStart = 0;
+    }
+    else
+    {
+    	/* Skip mono lights */
+    	u8BulbStart = NUM_MONO_LIGHTS;
+    }
+    for (u8Bulb = u8BulbStart; u8Bulb < NUM_BULBS; u8Bulb++)
     {
     	tsCLD_ScenesCustomDataStructure *ptsCLD_Data;
 
@@ -197,7 +207,7 @@ PRIVATE  bool bCLD_ScenesSearchForScene(void *pvSearchParam, void *psNodeUnderTe
  ****************************************************************************/
 PUBLIC void vLoadScenesNVM(void)
 {
-    uint8 i=0, j=0, u8Bulb;
+    uint8 i=0, j=0, u8Bulb, u8BulbStart;
     uint16 u16ByteRead;
 
     PDM_eReadDataFromRecord(PDM_ID_APP_SCENES_DATA,
@@ -205,7 +215,16 @@ PUBLIC void vLoadScenesNVM(void)
                             sizeof(sScenesCustomData),
                             &u16ByteRead);
 
-    for (u8Bulb = 0; u8Bulb < NUM_BULBS; u8Bulb++)
+    if (u32ComputedWhiteMode == 0)
+	{
+		u8BulbStart = 0;
+	}
+	else
+	{
+		/* Skip mono lights */
+		u8BulbStart = NUM_MONO_LIGHTS;
+	}
+    for (u8Bulb = u8BulbStart; u8Bulb < NUM_BULBS; u8Bulb++)
 	{
     	tsCLD_ScenesCustomDataStructure *ptsCLD_Data;
 
@@ -270,11 +289,14 @@ PUBLIC void vRemoveAllGroupsAndScenes(void)
 {
 	uint8 i;
 
-	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	if (u32ComputedWhiteMode == 0)
 	{
-		eCLD_GroupsRemoveAllGroups(&sLightMono[i].sEndPoint,
-								   &sLightMono[i].sClusterInstance.sGroupsServer,
-								   (uint64)0xffffffffffffffffLL);
+		for (i = 0; i < NUM_MONO_LIGHTS; i++)
+		{
+			eCLD_GroupsRemoveAllGroups(&sLightMono[i].sEndPoint,
+									   &sLightMono[i].sClusterInstance.sGroupsServer,
+									   (uint64)0xffffffffffffffffLL);
+		}
 	}
 	for (i = 0; i < NUM_RGB_LIGHTS; i++)
 	{

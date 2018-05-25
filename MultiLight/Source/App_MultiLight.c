@@ -76,57 +76,62 @@ tsZLL_ColourLightDevice sLightRGB[NUM_RGB_LIGHTS];
 tsIdentifyWhite sIdEffectMono[NUM_MONO_LIGHTS];
 tsIdentifyColour sIdEffectRGB[NUM_RGB_LIGHTS];
 
-tsCLD_ZllDeviceTable sDeviceTable = { ZLL_NUMBER_DEVICES,
-                                      {
-                                          { 0,
-                                            ZLL_PROFILE_ID,
-                                            DIMMABLE_LIGHT_DEVICE_ID,
-                                            MULTILIGHT_LIGHT_MONO_1_ENDPOINT,
-                                            2,
-                                            3,
-                                            0},
+/****************************************************************************/
+/***        Local Variables                                               ***/
+/****************************************************************************/
 
-                                          { 0,
-											ZLL_PROFILE_ID,
-											DIMMABLE_LIGHT_DEVICE_ID,
-											MULTILIGHT_LIGHT_MONO_2_ENDPOINT,
-											2,
-											3,
-											1},
+PRIVATE tsCLD_ZllDeviceTable sDeviceTable =
+	{NUM_MONO_LIGHTS + NUM_RGB_LIGHTS,
+		{
+			{0,
+			 ZLL_PROFILE_ID,
+			 DIMMABLE_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_MONO_1_ENDPOINT,
+			 2,
+			 3,
+			 0},
 
-									      { 0,
-											ZLL_PROFILE_ID,
-											DIMMABLE_LIGHT_DEVICE_ID,
-											MULTILIGHT_LIGHT_MONO_3_ENDPOINT,
-											2,
-											3,
-											2},
+			{0,
+			 ZLL_PROFILE_ID,
+			 DIMMABLE_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_MONO_2_ENDPOINT,
+			 2,
+			 3,
+			 1},
 
-										  { 0,
-											ZLL_PROFILE_ID,
-											COLOUR_LIGHT_DEVICE_ID,
-											MULTILIGHT_LIGHT_RGB_1_ENDPOINT,
-											2,
-											3,
-											3},
+			{0,
+			 ZLL_PROFILE_ID,
+			 DIMMABLE_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_MONO_3_ENDPOINT,
+			 2,
+			 3,
+			 2},
 
-										  { 0,
-											ZLL_PROFILE_ID,
-											COLOUR_LIGHT_DEVICE_ID,
-											MULTILIGHT_LIGHT_RGB_2_ENDPOINT,
-											2,
-											3,
-											4},
+			{0,
+			 ZLL_PROFILE_ID,
+			 COLOUR_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_RGB_1_ENDPOINT,
+			 2,
+			 3,
+			 3},
 
-										  { 0,
-											ZLL_PROFILE_ID,
-											COLOUR_LIGHT_DEVICE_ID,
-											MULTILIGHT_LIGHT_RGB_3_ENDPOINT,
-											2,
-											3,
-											5}
-                                      }
-};
+			{0,
+			 ZLL_PROFILE_ID,
+			 COLOUR_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_RGB_2_ENDPOINT,
+			 2,
+			 3,
+			 4},
+
+			{0,
+			 ZLL_PROFILE_ID,
+			 COLOUR_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_RGB_3_ENDPOINT,
+			 2,
+			 3,
+			 5}
+		}
+	};
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -140,6 +145,60 @@ PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep);
 
 /****************************************************************************
  **
+ ** NAME: u8App_GetNumberOfDevices
+ **
+ ** DESCRIPTION:
+ ** Get number of ZLL devices that are registered (or will be registered) by
+ ** the firmware.
+ **
+ ** PARAMETER: void
+ **
+ ** RETURNS:
+ ** Number of devices
+ *
+ ****************************************************************************/
+PUBLIC uint8 u8App_GetNumberOfDevices(void)
+{
+	if (u32ComputedWhiteMode == 0)
+	{
+		return NUM_MONO_LIGHTS + NUM_RGB_LIGHTS;
+	}
+	else
+	{
+		return NUM_RGB_LIGHTS;
+	}
+}
+
+/****************************************************************************
+ **
+ ** NAME: psApp_GetDeviceRecord
+ **
+ ** DESCRIPTION:
+ ** Get ZLL device record
+ **
+ ** PARAMETER
+ ** Type                                Name                    Descirption
+ ** uint8                               u8RecordNum             0 = first record, 1 = second record etc.
+ **
+ **
+ ** RETURNS:
+ ** Pointer to tsCLD_ZllDeviceRecord structure
+ *
+ ****************************************************************************/
+PUBLIC tsCLD_ZllDeviceRecord *psApp_GetDeviceRecord(uint8 u8RecordNum)
+{
+	if (u32ComputedWhiteMode == 0)
+	{
+		return &(sDeviceTable.asDeviceRecords[u8RecordNum]);
+	}
+	else
+	{
+		return &(sDeviceTable.asDeviceRecords[u8RecordNum + NUM_MONO_LIGHTS]);
+	}
+}
+
+/****************************************************************************
+ **
  ** NAME: eApp_ZLL_RegisterEndpoint
  **
  ** DESCRIPTION:
@@ -147,7 +206,7 @@ PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep);
  **
  ** PARAMETER
  ** Type                                Name                    Descirption
- ** tfpZCL_ZCLCallBackFunction            fptr                    Pointer to ZCL Callback function
+ ** tfpZCL_ZCLCallBackFunction          fptr                    Pointer to ZCL Callback function
  ** tsZLL_CommissionEndpoint            psCommissionEndpoint    Pointer to Commission Endpoint
  **
  **
@@ -170,13 +229,16 @@ PUBLIC teZCL_Status eApp_ZLL_RegisterEndpoint(tfpZCL_ZCLCallBackFunction fptr,
 
 	r = E_ZCL_SUCCESS;
 
-	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	if (u32ComputedWhiteMode == 0)
 	{
-		if (r == E_ZCL_SUCCESS)
+		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{
-			r = eZLL_RegisterDimmableLightEndPoint(MULTILIGHT_LIGHT_MONO_1_ENDPOINT + i,
-												   fptr,
-												   &(sLightMono[i]));
+			if (r == E_ZCL_SUCCESS)
+			{
+				r = eZLL_RegisterDimmableLightEndPoint(MULTILIGHT_LIGHT_MONO_1_ENDPOINT + i,
+													   fptr,
+													   &(sLightMono[i]));
+			}
 		}
 	}
 	for (i = 0; i < NUM_RGB_LIGHTS; i++)
@@ -304,14 +366,17 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 
 
     /* Initialize the strings in Basic */
-	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+	if (u32ComputedWhiteMode == 0)
 	{
-		memcpy(sLightMono[i].sBasicServerCluster.au8ManufacturerName, "NXP", CLD_BAS_MANUF_NAME_SIZE);
-		memcpy(sLightMono[i].sBasicServerCluster.au8ModelIdentifier, "ZLL-MonoLight   ", CLD_BAS_MODEL_ID_SIZE);
-		memcpy(sLightMono[i].sBasicServerCluster.au8DateCode, "20150212", CLD_BAS_DATE_SIZE);
-		memcpy(sLightMono[i].sBasicServerCluster.au8SWBuildID, "1000-0004", CLD_BAS_SW_BUILD_SIZE);
-		sIdEffectMono[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-		sIdEffectMono[i].u8Tick = 0;
+		for (i = 0; i < NUM_MONO_LIGHTS; i++)
+		{
+			memcpy(sLightMono[i].sBasicServerCluster.au8ManufacturerName, "NXP", CLD_BAS_MANUF_NAME_SIZE);
+			memcpy(sLightMono[i].sBasicServerCluster.au8ModelIdentifier, "ZLL-MonoLight   ", CLD_BAS_MODEL_ID_SIZE);
+			memcpy(sLightMono[i].sBasicServerCluster.au8DateCode, "20150212", CLD_BAS_DATE_SIZE);
+			memcpy(sLightMono[i].sBasicServerCluster.au8SWBuildID, "1000-0004", CLD_BAS_SW_BUILD_SIZE);
+			sIdEffectMono[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+			sIdEffectMono[i].u8Tick = 0;
+		}
 	}
 	for (i = 0; i < NUM_RGB_LIGHTS; i++)
 	{
@@ -342,9 +407,9 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 
     uint8 u8Red, u8Green, u8Blue;
-    uint8 u8Effect;
+    uint8 u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
     uint8 u8Index;
-    uint16 u16Time;
+    uint16 u16Time = 0;
     bool_t bIsRGB;
 
     if (!bEndPointToNum(u8Endpoint, &bIsRGB, &u8Index))
@@ -357,7 +422,7 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
     	u8Effect = sIdEffectRGB[u8Index].u8Effect;
     	u16Time = sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime;
     }
-    else
+    else if (u32ComputedWhiteMode == 0)
     {
     	u8Effect = sIdEffectMono[u8Index].u8Effect;
     	u16Time = sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime;
@@ -394,7 +459,7 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 			                    u8Green,
 			                    u8Blue);
         }
-        else
+        else if (u32ComputedWhiteMode == 0)
         {
         	vSetBulbState(BULB_NUM_MONO(u8Index),
 						  sLightMono[u8Index].sOnOffServerCluster.bOnOff,
@@ -409,7 +474,7 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 		{
 			vRGBLight_SetLevels(BULB_NUM_RGB(u8Index), TRUE, 159, 250, 0, 0);
 		}
-		else
+		else if (u32ComputedWhiteMode == 0)
 		{
 			sIdEffectMono[u8Index].u8Level = 250;
 			sIdEffectMono[u8Index].u8Count = 5;
@@ -514,103 +579,105 @@ PUBLIC void vIdEffectTick(void) {
 		}
     }
 
-    for (i = 0; i < NUM_MONO_LIGHTS; i++)
+    if (u32ComputedWhiteMode == 0)
     {
-    	/* Mono lights */
-
-    	if (sIdEffectMono[i].u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
+		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{
-			if (sIdEffectMono[i].u8Tick > 0)
+			/* Mono lights */
+
+			if (sIdEffectMono[i].u8Effect < E_CLD_IDENTIFY_EFFECT_STOP_EFFECT)
 			{
-				//DBG_vPrintf(TRACE_PATH, "\nPath 5");
+				if (sIdEffectMono[i].u8Tick > 0)
+				{
+					//DBG_vPrintf(TRACE_PATH, "\nPath 5");
 
-				sIdEffectMono[i].u8Tick--;
-				/* Set the light parameters */
+					sIdEffectMono[i].u8Tick--;
+					/* Set the light parameters */
 
-				vSetBulbState(BULB_NUM_MONO(i), TRUE, sIdEffectMono[i].u8Level);
+					vSetBulbState(BULB_NUM_MONO(i), TRUE, sIdEffectMono[i].u8Level);
 
-				/* Now adjust parameters ready for for next round */
-				switch (sIdEffectMono[i].u8Effect) {
-					case E_CLD_IDENTIFY_EFFECT_BLINK:
-						break;
+					/* Now adjust parameters ready for for next round */
+					switch (sIdEffectMono[i].u8Effect) {
+						case E_CLD_IDENTIFY_EFFECT_BLINK:
+							break;
 
-					case E_CLD_IDENTIFY_EFFECT_BREATHE:
-						if (sIdEffectMono[i].bDirection) {
-							if (sIdEffectMono[i].u8Level >= 250) {
-								sIdEffectMono[i].u8Level -= 50;
-								sIdEffectMono[i].bDirection = 0;
-							} else {
-								sIdEffectMono[i].u8Level += 50;
-							}
-						} else {
-							if (sIdEffectMono[i].u8Level == 0) {
-								// go back up, check for stop
-								sIdEffectMono[i].u8Count--;
-								if ((sIdEffectMono[i].u8Count) && ( !sIdEffectMono[i].bFinish)) {
-									sIdEffectMono[i].u8Level += 50;
-									sIdEffectMono[i].bDirection = 1;
+						case E_CLD_IDENTIFY_EFFECT_BREATHE:
+							if (sIdEffectMono[i].bDirection) {
+								if (sIdEffectMono[i].u8Level >= 250) {
+									sIdEffectMono[i].u8Level -= 50;
+									sIdEffectMono[i].bDirection = 0;
 								} else {
-									//DBG_vPrintf(TRACE_LIGHT_TASK, "\n>>set tick 0<<");
-									/* lpsw2773 - stop the effect on the next tick */
-									sIdEffectMono[i].u8Tick = 0;
+									sIdEffectMono[i].u8Level += 50;
 								}
 							} else {
-								sIdEffectMono[i].u8Level -= 50;
+								if (sIdEffectMono[i].u8Level == 0) {
+									// go back up, check for stop
+									sIdEffectMono[i].u8Count--;
+									if ((sIdEffectMono[i].u8Count) && ( !sIdEffectMono[i].bFinish)) {
+										sIdEffectMono[i].u8Level += 50;
+										sIdEffectMono[i].bDirection = 1;
+									} else {
+										//DBG_vPrintf(TRACE_LIGHT_TASK, "\n>>set tick 0<<");
+										/* lpsw2773 - stop the effect on the next tick */
+										sIdEffectMono[i].u8Tick = 0;
+									}
+								} else {
+									sIdEffectMono[i].u8Level -= 50;
+								}
 							}
-						}
-						break;
-					case E_CLD_IDENTIFY_EFFECT_OKAY:
-						if ((sIdEffectMono[i].u8Tick == 10) || (sIdEffectMono[i].u8Tick == 5)) {
-							sIdEffectMono[i].u8Level ^= 254;
-							if (sIdEffectMono[i].bFinish) {
+							break;
+						case E_CLD_IDENTIFY_EFFECT_OKAY:
+							if ((sIdEffectMono[i].u8Tick == 10) || (sIdEffectMono[i].u8Tick == 5)) {
+								sIdEffectMono[i].u8Level ^= 254;
+								if (sIdEffectMono[i].bFinish) {
+									sIdEffectMono[i].u8Tick = 0;
+								}
+							}
+							break;
+						case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
+							if ( sIdEffectMono[i].u8Tick == 74) {
+								sIdEffectMono[i].u8Level = 1;
+								if (sIdEffectMono[i].bFinish) {
+									sIdEffectMono[i].u8Tick = 0;
+								}
+							}
+							break;
+						default:
+							if ( sIdEffectMono[i].bFinish ) {
 								sIdEffectMono[i].u8Tick = 0;
 							}
 						}
-						break;
-					case E_CLD_IDENTIFY_EFFECT_CHANNEL_CHANGE:
-						if ( sIdEffectMono[i].u8Tick == 74) {
-							sIdEffectMono[i].u8Level = 1;
-							if (sIdEffectMono[i].bFinish) {
-								sIdEffectMono[i].u8Tick = 0;
-							}
-						}
-						break;
-					default:
-						if ( sIdEffectMono[i].bFinish ) {
-							sIdEffectMono[i].u8Tick = 0;
-						}
-					}
+				} else {
+					/*
+					 * Effect finished, restore the light
+					 */
+					DBG_vPrintf(TRACE_PATH, "\nEffect End");
+					sIdEffectMono[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
+					sIdEffectMono[i].bDirection = FALSE;
+					APP_ZCL_vSetIdentifyTime(FALSE, MULTILIGHT_LIGHT_MONO_1_ENDPOINT + i, 0);
+					vSetBulbState(BULB_NUM_MONO(i),
+								  sLightMono[i].sOnOffServerCluster.bOnOff,
+								  sLightMono[i].sLevelControlServerCluster.u8CurrentLevel);
+				}
 			} else {
-				/*
-				 * Effect finished, restore the light
-				 */
-				DBG_vPrintf(TRACE_PATH, "\nEffect End");
-				sIdEffectMono[i].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
-				sIdEffectMono[i].bDirection = FALSE;
-				APP_ZCL_vSetIdentifyTime(FALSE, MULTILIGHT_LIGHT_MONO_1_ENDPOINT + i, 0);
-				vSetBulbState(BULB_NUM_MONO(i),
-						      sLightMono[i].sOnOffServerCluster.bOnOff,
-						      sLightMono[i].sLevelControlServerCluster.u8CurrentLevel);
-			}
-		} else {
-			if (sLightMono[i].sIdentifyServerCluster.u16IdentifyTime) {
-				sIdEffectMono[i].u8Count--;
-				if (0 == sIdEffectMono[i].u8Count) {
-					sIdEffectMono[i].u8Count = 5;
-					if (sIdEffectMono[i].u8Level) {
-						sIdEffectMono[i].u8Level = 0;
-						vSetBulbState(BULB_NUM_MONO(i), FALSE, 0);
-					}
-					else
-					{
-						sIdEffectMono[i].u8Level = 250;
-						vSetBulbState(BULB_NUM_MONO(i), TRUE, CLD_LEVELCONTROL_MAX_LEVEL);
+				if (sLightMono[i].sIdentifyServerCluster.u16IdentifyTime) {
+					sIdEffectMono[i].u8Count--;
+					if (0 == sIdEffectMono[i].u8Count) {
+						sIdEffectMono[i].u8Count = 5;
+						if (sIdEffectMono[i].u8Level) {
+							sIdEffectMono[i].u8Level = 0;
+							vSetBulbState(BULB_NUM_MONO(i), FALSE, 0);
+						}
+						else
+						{
+							sIdEffectMono[i].u8Level = 250;
+							vSetBulbState(BULB_NUM_MONO(i), TRUE, CLD_LEVELCONTROL_MAX_LEVEL);
+						}
 					}
 				}
 			}
 		}
     }
-
 }
 
 /****************************************************************************
@@ -697,7 +764,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				break;
 		}
 	}
-	else
+	else if (u32ComputedWhiteMode == 0)
 	{
 		/* Mono light */
 
@@ -752,7 +819,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 			sIdEffectMono[u8Index].u8Effect = E_CLD_IDENTIFY_EFFECT_STOP_EFFECT;
 			APP_ZCL_vSetIdentifyTime(FALSE, u8Endpoint, 1);
 			break;
-	}
+		}
 	}
 }
 

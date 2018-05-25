@@ -123,6 +123,7 @@ PRIVATE void APP_ZCL_cbZllCommissionCallback(tsZCL_CallBackEvent *psEvent);
 /***        Exported Variables                                            ***/
 /****************************************************************************/
 //extern PDM_tsRecordDescriptor sScenesDataPDDesc;
+PUBLIC uint32 u32ComputedWhiteMode;
 
 /****************************************************************************/
 /***        Local Variables                                               ***/
@@ -135,9 +136,6 @@ PRIVATE tsZLL_CommissionEndpoint sCommissionEndpoint;
 /***        Exported Functions                                            ***/
 /****************************************************************************/
 
-PUBLIC void* psGetDeviceTable(void) {
-    return &sDeviceTable;
-}
 /****************************************************************************
  *
  * NAME: APP_ZCL_vInitialise
@@ -153,6 +151,20 @@ PUBLIC void APP_ZCL_vInitialise(void)
 {
     teZCL_Status eZCL_Status;
     unsigned int i;
+    PDM_teStatus ePDMStatus;
+	uint16 u16ByteRead;
+
+	/* Before doing any light-related things, check to see if we are using
+	 * computed white mode. This needs to be done first, because computed
+	 * white mode ends up disabling some lights. */
+	ePDMStatus = PDM_eReadDataFromRecord(PDM_ID_APP_COMPUTE_WHITE,
+				&u32ComputedWhiteMode,
+				sizeof(u32ComputedWhiteMode), &u16ByteRead);
+	if ((ePDMStatus != PDM_E_STATUS_OK) || (u16ByteRead != sizeof(u32ComputedWhiteMode)))
+	{
+		/* Failed to load computed white mode from PDM; load default. */
+		u32ComputedWhiteMode = 0;
+	}
 
     /* Initialise ZLL */
     eZCL_Status = eZLL_Initialise(&APP_ZCL_cbGeneralCallback, apduZCL);
@@ -164,9 +176,9 @@ PUBLIC void APP_ZCL_vInitialise(void)
     /* Start the tick timer */
     OS_eStartSWTimer(APP_TickTimer, ZCL_TICK_TIME, NULL);
 
-    for (i = 0; i < sDeviceTable.u8NumberDevices; i++)
+    for (i = 0; i < u8App_GetNumberOfDevices(); i++)
     {
-    	sDeviceTable.asDeviceRecords[i].u64IEEEAddr = *((uint64*)pvAppApiGetMacAddrLocation());
+    	psApp_GetDeviceRecord(i)->u64IEEEAddr = *((uint64*)pvAppApiGetMacAddrLocation());
     }
 
     /* Register Commission EndPoint */
@@ -184,9 +196,12 @@ PUBLIC void APP_ZCL_vInitialise(void)
 #endif
 
     #ifdef CLD_LEVEL_CONTROL
-    	for (i = 0; i < NUM_MONO_LIGHTS; i++)
+    	if (u32ComputedWhiteMode == 0)
     	{
-    		sLightMono[i].sLevelControlServerCluster.u8CurrentLevel = 0xFE;
+			for (i = 0; i < NUM_MONO_LIGHTS; i++)
+			{
+				sLightMono[i].sLevelControlServerCluster.u8CurrentLevel = 0xFE;
+			}
     	}
     	for (i = 0; i < NUM_RGB_LIGHTS; i++)
 		{
@@ -194,10 +209,13 @@ PUBLIC void APP_ZCL_vInitialise(void)
 		}
     #endif
 
-	for (i = 0; i < NUM_MONO_LIGHTS; i++)
-	{
-		sLightMono[i].sOnOffServerCluster.bOnOff = TRUE;
-	}
+    if (u32ComputedWhiteMode == 0)
+    {
+		for (i = 0; i < NUM_MONO_LIGHTS; i++)
+		{
+			sLightMono[i].sOnOffServerCluster.bOnOff = TRUE;
+		}
+    }
 	for (i = 0; i < NUM_RGB_LIGHTS; i++)
 	{
 		sLightRGB[i].sOnOffServerCluster.bOnOff = TRUE;
@@ -237,9 +255,12 @@ PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uin
 	if (bAllEndpoints)
 	{
 		/* Set remaining time for all endpoints */
-		for (u8Index = 0; u8Index < NUM_MONO_LIGHTS; u8Index++)
+		if (u32ComputedWhiteMode == 0)
 		{
-			sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+			for (u8Index = 0; u8Index < NUM_MONO_LIGHTS; u8Index++)
+			{
+				sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
+			}
 		}
 		for (u8Index = 0; u8Index < NUM_RGB_LIGHTS; u8Index++)
 		{
@@ -257,7 +278,7 @@ PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uin
 		{
 			sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
 		}
-		else
+		else if (u32ComputedWhiteMode == 0)
 		{
 			sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
 		}
@@ -564,7 +585,7 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
 										u8Green,
 										u8Blue);
 				}
-				else
+				else if (u32ComputedWhiteMode == 0)
 				{
 					vSetBulbState(BULB_NUM_MONO(u8Index),
 								  sLightMono[u8Index].sOnOffServerCluster.bOnOff,
@@ -613,11 +634,12 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
         }
         else
         {
+        	u16IdentifyTime = 0;
         	if (bIsRGB)
         	{
         		u16IdentifyTime = sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime;
         	}
-        	else
+        	else if (u32ComputedWhiteMode == 0)
         	{
         		u16IdentifyTime = sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime;
         	}
@@ -672,7 +694,7 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                                         u8Green,
                                         u8Blue);
                 }
-                else
+                else if (u32ComputedWhiteMode == 0)
                 {
                 	vSetBulbState(BULB_NUM_MONO(u8Index),
                 			      sLightMono[u8Index].sOnOffServerCluster.bOnOff,

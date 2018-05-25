@@ -151,8 +151,6 @@ tsZllState sZllState = { FACTORY_NEW, E_STARTUP, ZLL_SKIP_CH1 };
 
 PDM_tsRecordDescriptor sZllPDDesc;
 
-extern tsCLD_ZllDeviceTable sDeviceTable;
-
 PRIVATE uint8 eDecryptKey(uint8* au8InData, uint8* au8OutData,
         uint32 u32TransId, uint32 u32ResponseId, uint8 u8KeyIndex);
 PRIVATE bool
@@ -318,17 +316,17 @@ OS_TASK(APP_Commission_Task) {
                                         0,
                                         sizeof(tsCLD_ZllCommission_DeviceInfoRspCommandPayload));
                                 sZllCommand.uPayload.sDeviceInfoRspPayload.u32TransactionId = sEvent.sZllMessage.uPayload.sDeviceInfoReqPayload.u32TransactionId;
-                                sZllCommand.uPayload.sDeviceInfoRspPayload.u8NumberSubDevices = ZLL_NUMBER_DEVICES;
+                                sZllCommand.uPayload.sDeviceInfoRspPayload.u8NumberSubDevices = u8App_GetNumberOfDevices();
                                 sZllCommand.uPayload.sDeviceInfoRspPayload.u8StartIndex = sEvent.sZllMessage.uPayload.sDeviceInfoReqPayload.u8StartIndex;
                                 sZllCommand.uPayload.sDeviceInfoRspPayload.u8DeviceInfoRecordCount = 0;
-                                // copy from table sDeviceTable
+                                // copy from table device table
 
 
                                 int i,j;
                                 j = sEvent.sZllMessage.uPayload.sDeviceInfoReqPayload.u8StartIndex;
-                                for (i = 0; i < 16 && j < ZLL_NUMBER_DEVICES; i++, j++)
+                                for (i = 0; i < 16 && j < u8App_GetNumberOfDevices(); i++, j++)
                                 {
-                                    sZllCommand.uPayload.sDeviceInfoRspPayload.asDeviceRecords[i] = sDeviceTable.asDeviceRecords[j];
+                                    sZllCommand.uPayload.sDeviceInfoRspPayload.asDeviceRecords[i] = *(psApp_GetDeviceRecord(j));
                                     sZllCommand.uPayload.sDeviceInfoRspPayload.u8DeviceInfoRecordCount++;
                                 }
 
@@ -746,13 +744,13 @@ PRIVATE teZCL_Status eSendScanResponse(ZPS_tsNwkNib *psNib,
     sScanRsp.u16NwkAddr = psNib->sPersist.u16NwkAddr;
 
     sScanRsp.u8TotalGroupIds = 0;
-    sScanRsp.u8NumberSubDevices = sDeviceTable.u8NumberDevices;
+    sScanRsp.u8NumberSubDevices = u8App_GetNumberOfDevices();
     if (sScanRsp.u8NumberSubDevices  == 1)
     {
-        sScanRsp.u8Endpoint = sDeviceTable.asDeviceRecords[0].u8Endpoint;
-        sScanRsp.u16ProfileId = sDeviceTable.asDeviceRecords[0].u16ProfileId;
-        sScanRsp.u16DeviceId = sDeviceTable.asDeviceRecords[0].u16DeviceId;
-        sScanRsp.u8Version = sDeviceTable.asDeviceRecords[0].u8Version;
+        sScanRsp.u8Endpoint = psApp_GetDeviceRecord(0)->u8Endpoint;
+        sScanRsp.u16ProfileId = psApp_GetDeviceRecord(0)->u16ProfileId;
+        sScanRsp.u16DeviceId = psApp_GetDeviceRecord(0)->u16DeviceId;
+        sScanRsp.u8Version = psApp_GetDeviceRecord(0)->u8Version;
         sScanRsp.u8GroupIdCount = 0;
     }
     //sDstAddr = sEvent.sZllMessage.sSrcAddr;

@@ -74,6 +74,7 @@ PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uin
 /****************************************************************************/
 /***        Exported Variables                                            ***/
 /****************************************************************************/
+PUBLIC uint32 u32ComputedWhiteMode;
 
 #endif /* APP_ZCL_TASK_H_ */
 

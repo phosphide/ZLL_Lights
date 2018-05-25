@@ -49,6 +49,7 @@
 #include "PDM.h"
 #include "PDM_IDs.h"
 #include "os.h"
+#include "app_zcl_light_task.h"
 #include "app_light_calibration.h"
 #include "app_temp_sensor.h"
 #include "DriverBulb.h"
@@ -122,6 +123,7 @@ PRIVATE uint8 au8TxBuf[TX_BUF_SIZE];
 PRIVATE uint8 au8RxBuf[RX_BUF_SIZE];
 PRIVATE char acCurrentLine[MAX_LINE_SIZE + 1]; // + 1 for null
 PRIVATE unsigned int uCurrentLineSize;
+PRIVATE uint32 u32NewComputedWhiteMode;
 
 /* Map of bulbs to PCA9685 channels. */
 PRIVATE const uint8 au8ChannelMap[NUM_BULBS * 3] = {
@@ -164,6 +166,10 @@ PUBLIC void vLC_InitSerialInterface(void)
 	vAHI_UartSetAutoFlowCtrl(E_AHI_UART_0, E_AHI_UART_FIFO_ARTS_LEVEL_8, FALSE, FALSE, FALSE);
 	/* Interrupt on RX */
 	vAHI_UartSetInterrupt(E_AHI_UART_0, FALSE, FALSE, FALSE, TRUE, E_AHI_UART_FIFO_LEVEL_1);
+
+	/* Set new computed white mode to existing computed white mode, so that
+	 * the "i" command returns the correct mode. */
+	u32NewComputedWhiteMode = u32ComputedWhiteMode;
 }
 
 /****************************************************************************
@@ -247,6 +253,7 @@ PUBLIC void vLC_LoadCalibrationFromNVM(void)
 PUBLIC void vLC_SaveCalibrationToNVM(void)
 {
 	PDM_eSaveRecordData(PDM_ID_APP_LIGHT_CALIB, &atsLC_Calibration, sizeof(atsLC_Calibration));
+	PDM_eSaveRecordData(PDM_ID_APP_COMPUTE_WHITE, &u32NewComputedWhiteMode, sizeof(u32NewComputedWhiteMode));
 }
 
 /****************************************************************************
@@ -375,7 +382,7 @@ PRIVATE void vLC_ProcessCommand(char *pcCommand)
 		vLC_WriteStringToUART("\r\n");
 		/* Refresh current PWM values, to account for new calibration
 		 * parameters. */
-		for (i = 0; i < (NUM_MONO_LIGHTS + NUM_RGB_LIGHTS); i++)
+		for (i = 0; i < NUM_BULBS; i++)
 		{
 			DriverBulb_vOutput((uint8)i);
 		}
@@ -444,6 +451,21 @@ PRIVATE void vLC_ProcessCommand(char *pcCommand)
 			vLC_WriteStringToUART(",");
 			vLC_WriteChannelStatusToUART(i, CHANNEL_BRIGHTNESS);
 		}
+		vLC_WriteStringToUART(",ComputedWhiteMode=");
+		vLC_WriteUnsignedIntegerToUART((unsigned int)u32NewComputedWhiteMode);
+		vLC_WriteStringToUART("\r\n");
+		break;
+
+	case 'w':
+		/* Set computed white mode */
+		/* We don't set u32ComputedWhiteMode because several
+		 * commissioning-related functions refer to it. So it's not safe to
+		 * update u32ComputedWhiteMode without restarting. So we just update
+		 * u32NewComputedWhiteMode, save it to NVM, so the new value will
+		 * be used on the next restart. */
+		u32NewComputedWhiteMode = u32LC_StringToUnsignedInteger(&(pcCommand[1]), NULL);
+		vLC_WriteStringToUART("ComputedWhiteMode=");
+		vLC_WriteUnsignedIntegerToUART((unsigned int)u32NewComputedWhiteMode);
 		vLC_WriteStringToUART("\r\n");
 		break;
 
