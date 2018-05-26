@@ -65,6 +65,7 @@
 #include "app_zcl_light_task.h"
 #include "zpr_light_node.h"
 #include "app_light_calibration.h"
+#include "app_temp_sensor.h"
 #include "app_common.h"
 #include "identify.h"
 #include "Groups.h"
@@ -316,6 +317,25 @@ OS_TASK(Tick_Task)
     {
         eZLL_Update100mS();
         u32Tick10ms = 0;
+        /* Also check that board isn't overheating */
+        if (!bOverheat && (i16TS_GetTemperature() > TEMPERATURE_OVERHEAT_CUTOFF))
+        {
+        	bOverheat = TRUE;
+        	/* Ensure driver switches off all bulbs */
+        	for (i = 0; i < NUM_BULBS; i++)
+        	{
+        		DriverBulb_vOutput(i);
+        	}
+        }
+        if (bOverheat && (i16TS_GetTemperature() < TEMPERATURE_RESTORE_THRESHOLD))
+        {
+        	bOverheat = FALSE;
+        	/* Restore bulb states */
+        	for (i = 0; i < NUM_BULBS; i++)
+			{
+				DriverBulb_vOutput(i);
+			}
+        }
     }
 #if ( defined CLD_LEVEL_CONTROL) && !(defined MONO_ON_OFF)  /* add in nine 10ms interpolation points */
     else

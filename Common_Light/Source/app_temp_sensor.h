@@ -49,6 +49,13 @@
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
 
+/* Board temperature limit in degrees Celsius. If the temperature exceeds
+ * this, all lights will be shut off to prevent stuff from burning. */
+#define TEMPERATURE_OVERHEAT_CUTOFF			85
+/* After the board overheats, once the temperature drops below this threshold,
+ * normal light operation will resume. This number is in degrees Celsius. */
+#define TEMPERATURE_RESTORE_THRESHOLD		75
+
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
@@ -64,6 +71,8 @@ PUBLIC int16 i16TS_GetTemperature(void);
 /****************************************************************************/
 /***        External Variables                                            ***/
 /****************************************************************************/
+
+extern volatile bool_t bOverheat;
 
 #endif /* APP_TEMP_SENSOR_H */
 

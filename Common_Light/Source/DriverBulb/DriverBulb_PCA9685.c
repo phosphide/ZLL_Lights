@@ -15,6 +15,7 @@
 #include "App_MultiLight.h"
 #include "DriverBulb.h"
 #include "app_light_calibration.h"
+#include "app_temp_sensor.h"
 
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -304,7 +305,7 @@ PUBLIC void DriverBulb_vOutput(uint8 u8Bulb)
 	u8NumChannels = bIsRGB ? 3 : 1;
 
 	/* Is bulb on ? */
-	if (bIsOn[u8Bulb])
+	if (bIsOn[u8Bulb] && !bOverheat)
 	{
 		if (bIsRGB)
 		{
