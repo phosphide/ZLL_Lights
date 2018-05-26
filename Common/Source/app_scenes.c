@@ -48,6 +48,7 @@
 #include "zcl_options.h"
 #include "zps_apl_af.h"
 #include "app_zcl_light_task.h"
+#include "app_light_calibration.h"
 
 #include "app_common.h"
 #include "DriverBulb.h"
@@ -115,7 +116,7 @@ PUBLIC void vSaveScenesNVM(void)
     tsCLD_ScenesTableEntry *psTableEntry;
     tsSearchParameter sSearchParameter;
 
-    if (u32ComputedWhiteMode == 0)
+    if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
     {
     	u8BulbStart = 0;
     }
@@ -215,7 +216,7 @@ PUBLIC void vLoadScenesNVM(void)
                             sizeof(sScenesCustomData),
                             &u16ByteRead);
 
-    if (u32ComputedWhiteMode == 0)
+    if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		u8BulbStart = 0;
 	}
@@ -289,7 +290,7 @@ PUBLIC void vRemoveAllGroupsAndScenes(void)
 {
 	uint8 i;
 
-	if (u32ComputedWhiteMode == 0)
+	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{

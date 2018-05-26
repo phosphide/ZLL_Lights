@@ -64,6 +64,7 @@
 
 #include "app_zcl_light_task.h"
 #include "zpr_light_node.h"
+#include "app_light_calibration.h"
 #include "app_common.h"
 #include "identify.h"
 #include "Groups.h"
@@ -163,7 +164,7 @@ PUBLIC void APP_ZCL_vInitialise(void)
 	if ((ePDMStatus != PDM_E_STATUS_OK) || (u16ByteRead != sizeof(u32ComputedWhiteMode)))
 	{
 		/* Failed to load computed white mode from PDM; load default. */
-		u32ComputedWhiteMode = 0;
+		u32ComputedWhiteMode = COMPUTED_WHITE_NONE;
 	}
 
     /* Initialise ZLL */
@@ -196,7 +197,7 @@ PUBLIC void APP_ZCL_vInitialise(void)
 #endif
 
     #ifdef CLD_LEVEL_CONTROL
-    	if (u32ComputedWhiteMode == 0)
+    	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
     	{
 			for (i = 0; i < NUM_MONO_LIGHTS; i++)
 			{
@@ -209,7 +210,7 @@ PUBLIC void APP_ZCL_vInitialise(void)
 		}
     #endif
 
-    if (u32ComputedWhiteMode == 0)
+    if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
     {
 		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{
@@ -255,7 +256,7 @@ PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uin
 	if (bAllEndpoints)
 	{
 		/* Set remaining time for all endpoints */
-		if (u32ComputedWhiteMode == 0)
+		if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 		{
 			for (u8Index = 0; u8Index < NUM_MONO_LIGHTS; u8Index++)
 			{
@@ -278,7 +279,7 @@ PUBLIC void APP_ZCL_vSetIdentifyTime(bool_t bAllEndpoints, uint8 u8Endpoint, uin
 		{
 			sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
 		}
-		else if (u32ComputedWhiteMode == 0)
+		else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 		{
 			sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime = u16Time;
 		}
@@ -585,7 +586,7 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
 										u8Green,
 										u8Blue);
 				}
-				else if (u32ComputedWhiteMode == 0)
+				else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 				{
 					vSetBulbState(BULB_NUM_MONO(u8Index),
 								  sLightMono[u8Index].sOnOffServerCluster.bOnOff,
@@ -639,7 +640,7 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
         	{
         		u16IdentifyTime = sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime;
         	}
-        	else if (u32ComputedWhiteMode == 0)
+        	else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
         	{
         		u16IdentifyTime = sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime;
         	}
@@ -694,7 +695,7 @@ PRIVATE void APP_ZCL_cbEndpointCallback(tsZCL_CallBackEvent *psEvent)
                                         u8Green,
                                         u8Blue);
                 }
-                else if (u32ComputedWhiteMode == 0)
+                else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
                 {
                 	vSetBulbState(BULB_NUM_MONO(u8Index),
                 			      sLightMono[u8Index].sOnOffServerCluster.bOnOff,

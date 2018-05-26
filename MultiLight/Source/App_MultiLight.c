@@ -167,7 +167,7 @@ PRIVATE void vOverideProfileId(uint16* pu16Profile, uint8 u8Ep);
  ****************************************************************************/
 PUBLIC uint8 u8App_GetNumberOfDevices(void)
 {
-	if (u32ComputedWhiteMode == 0)
+	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		return NUM_MONO_LIGHTS + NUM_RGB_LIGHTS;
 	}
@@ -195,7 +195,7 @@ PUBLIC uint8 u8App_GetNumberOfDevices(void)
  ****************************************************************************/
 PUBLIC tsCLD_ZllDeviceRecord *psApp_GetDeviceRecord(uint8 u8RecordNum)
 {
-	if (u32ComputedWhiteMode == 0)
+	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		return &(sDeviceTable.asDeviceRecords[u8RecordNum]);
 	}
@@ -237,7 +237,7 @@ PUBLIC teZCL_Status eApp_ZLL_RegisterEndpoint(tfpZCL_ZCLCallBackFunction fptr,
 
 	r = E_ZCL_SUCCESS;
 
-	if (u32ComputedWhiteMode == 0)
+	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{
@@ -374,7 +374,7 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 
 
     /* Initialize the strings in Basic */
-	if (u32ComputedWhiteMode == 0)
+	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{
@@ -430,7 +430,7 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
     	u8Effect = sIdEffectRGB[u8Index].u8Effect;
     	u16Time = sLightRGB[u8Index].sIdentifyServerCluster.u16IdentifyTime;
     }
-    else if (u32ComputedWhiteMode == 0)
+    else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
     {
     	u8Effect = sIdEffectMono[u8Index].u8Effect;
     	u16Time = sLightMono[u8Index].sIdentifyServerCluster.u16IdentifyTime;
@@ -467,7 +467,7 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 			                    u8Green,
 			                    u8Blue);
         }
-        else if (u32ComputedWhiteMode == 0)
+        else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
         {
         	vSetBulbState(BULB_NUM_MONO(u8Index),
 						  sLightMono[u8Index].sOnOffServerCluster.bOnOff,
@@ -482,7 +482,7 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 		{
 			vRGBLight_SetLevels(BULB_NUM_RGB(u8Index), TRUE, 159, 250, 0, 0);
 		}
-		else if (u32ComputedWhiteMode == 0)
+		else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 		{
 			sIdEffectMono[u8Index].u8Level = 250;
 			sIdEffectMono[u8Index].u8Count = 5;
@@ -587,7 +587,7 @@ PUBLIC void vIdEffectTick(void) {
 		}
     }
 
-    if (u32ComputedWhiteMode == 0)
+    if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
     {
 		for (i = 0; i < NUM_MONO_LIGHTS; i++)
 		{
@@ -772,7 +772,7 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 				break;
 		}
 	}
-	else if (u32ComputedWhiteMode == 0)
+	else if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
 	{
 		/* Mono light */
 
