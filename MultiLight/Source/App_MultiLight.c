@@ -407,7 +407,8 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
  * DESCRIPTION:
  * ZLL Device Specific identify
  *
- * PARAMETER: endpoint to identify
+ * PARAMETERS:
+ * u8Endpoint: Endpoint to identify
  *
  * RETURNS: void
  *
@@ -488,6 +489,40 @@ PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint) {
 			sIdEffectMono[u8Index].u8Count = 5;
 			vSetBulbState(BULB_NUM_MONO(u8Index), TRUE, CLD_LEVELCONTROL_MAX_LEVEL);
 		}
+	}
+}
+
+/****************************************************************************
+ *
+ * NAME: APP_vHandleIdentifyAll
+ *
+ * DESCRIPTION:
+ * Identify all endpoints on device
+ *
+ * PARAMETERS:
+ * void
+ *
+ * RETURNS: void
+ *
+ ****************************************************************************/
+PUBLIC void APP_vHandleIdentifyAll(void)
+{
+	uint8 u8Endpoint;
+
+	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
+	{
+		for (u8Endpoint = MULTILIGHT_LIGHT_MONO_1_ENDPOINT;
+				u8Endpoint < (MULTILIGHT_LIGHT_MONO_1_ENDPOINT + NUM_MONO_LIGHTS);
+				u8Endpoint++)
+		{
+			APP_vHandleIdentify(u8Endpoint);
+		}
+	}
+	for (u8Endpoint = MULTILIGHT_LIGHT_RGB_1_ENDPOINT;
+			u8Endpoint < (MULTILIGHT_LIGHT_RGB_1_ENDPOINT + NUM_RGB_LIGHTS);
+			u8Endpoint++)
+	{
+		APP_vHandleIdentify(u8Endpoint);
 	}
 }
 

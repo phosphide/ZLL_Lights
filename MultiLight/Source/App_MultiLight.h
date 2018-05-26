@@ -72,6 +72,7 @@ PUBLIC void vRGBLight_SetLevels(uint8 u8Bulb, bool_t bOn, uint8 u8Level, uint8 u
                                 uint8 u8Green, uint8 u8Blue);
 PUBLIC void vSetBulbState(uint8 u8Bulb, bool bOn, uint8 u8Level);
 PUBLIC void APP_vHandleIdentify(uint8 u8Endpoint);
+PUBLIC void APP_vHandleIdentifyAll(void);
 PUBLIC void vCreateInterpolationPoints( void);
 
 /****************************************************************************/

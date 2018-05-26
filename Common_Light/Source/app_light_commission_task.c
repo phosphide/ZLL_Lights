@@ -306,8 +306,8 @@ OS_TASK(APP_Commission_Task) {
                                 }
 
                                 /** Identfiy time goes at 1Hz **/
-                                APP_ZCL_vSetIdentifyTime( TRUE, 0, sEvent.sZllMessage.uPayload.sIdentifyReqPayload.u16Duration);
-                                APP_vHandleIdentify(  sEvent.sZllMessage.uPayload.sIdentifyReqPayload.u16Duration);
+                                APP_ZCL_vSetIdentifyTime(TRUE, 0, sEvent.sZllMessage.uPayload.sIdentifyReqPayload.u16Duration);
+                                APP_vHandleIdentifyAll();
                                 break;
 
                             case E_CLD_COMMISSION_CMD_DEVICE_INFO_REQ:
