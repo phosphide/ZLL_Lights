@@ -77,7 +77,6 @@ PRIVATE uint8   u8CurrBlue[NUM_BULBS];
 PUBLIC void DriverBulb_vInit(void)
 {
 	static bool_t bInit = FALSE;
-	uint8 i;
 
 	/* Not already initialized ? */
 	if (bInit == FALSE)
@@ -109,18 +108,6 @@ PUBLIC void DriverBulb_vInit(void)
 
 		/* Ensure that PCA9685 outputs are configured to be push-pull */
 		PCA9685_vWriteRegister(REG_MODE2, 0x04);
-
-		/* Note light is on */
-		for (i = 0; i < NUM_BULBS; i++)
-		{
-			bIsOn[i] = TRUE;
-			u8CurrLevel[i] = CLD_LEVELCONTROL_MAX_LEVEL;
-			u8CurrRed[i] = 255;
-			u8CurrGreen[i] = 255;
-			u8CurrBlue[i] = 255;
-			/* Set outputs */
-			DriverBulb_vOutput(i);
-		}
 
 		/* Now initialized */
 		bInit = TRUE;

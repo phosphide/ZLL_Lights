@@ -51,6 +51,9 @@
 #include "DriverBulb.h"
 
 
+/****************************************************************************/
+/***        Macro Definitions                                             ***/
+/****************************************************************************/
 
 #ifdef DEBUG_LIGHT_TASK
 #define TRACE_LIGHT_TASK  TRUE
@@ -64,7 +67,12 @@
 #define TRACE_PATH  FALSE
 #endif
 
+/* This macro will be used in computed white mode. It calculates the
+ * white (mono) bulb number associated with an RGB bulb number. That white
+ * bulb will be used as the computed white channel for the color light. */
+#define RGB_BULB_TO_MONO(x)			((x) - (NUM_MONO_LIGHTS))
 
+#define FAST_DIV_BY_255(x)			((((x) << 8) + (x) + 255) >> 16)
 
 /****************************************************************************/
 /***        Exported Variables                                            ***/
@@ -838,15 +846,56 @@ PUBLIC void vStartEffect(uint8 u8Endpoint, uint8 u8Effect) {
 
 PUBLIC void vRGBLight_SetLevels(uint8 u8Bulb, bool_t bOn, uint8 u8Level, uint8 u8Red, uint8 u8Green, uint8 u8Blue)
 {
+	uint32 v;
+	uint8 u8ComputedWhite;
+
     if (bOn == TRUE)
     {
-    	vLI_Start(u8Bulb, u8Level, u8Red, u8Green, u8Blue, 0);
+    	if (u32ComputedWhiteMode == COMPUTED_WHITE_NONE)
+    	{
+    		vLI_Start(u8Bulb, u8Level, u8Red, u8Green, u8Blue, 0);
+    	}
+    	else if ((u32ComputedWhiteMode == COMPUTED_WHITE_BETTER_COLOR)
+    			|| (u32ComputedWhiteMode == COMPUTED_WHITE_BETTER_BRIGHTNESS))
+    	{
+    		/* Better color:
+    		 * white = MIN(R, G, B)
+    		 * R = R - white
+    		 * G = G - white
+    		 * B = B - white
+    		 *
+    		 * Better brightness:
+    		 * white = MIN(R, G, B) */
+
+    		u8ComputedWhite = MIN(u8Red, u8Green);
+    		u8ComputedWhite = MIN(u8ComputedWhite, u8Blue);
+    		if (u32ComputedWhiteMode == COMPUTED_WHITE_BETTER_COLOR)
+    		{
+    			u8Red -= u8ComputedWhite;
+    			u8Green -= u8ComputedWhite;
+    			u8Blue -= u8ComputedWhite;
+    		}
+    		vLI_Start(u8Bulb, u8Level, u8Red, u8Green, u8Blue, 0);
+    		/* Scale u8ComputedWhite by desired level */
+    		v = (uint32)u8ComputedWhite * (uint32)u8Level;
+    		vLI_Start(RGB_BULB_TO_MONO(u8Bulb), (uint8)(FAST_DIV_BY_255(v)), 0, 0, 0, 0);
+    	}
     }
     else
     {
         vLI_Stop(u8Bulb);
+        if (u32ComputedWhiteMode != COMPUTED_WHITE_NONE)
+        {
+        	/* Also stop associated computed white bulb */
+        	vLI_Stop(RGB_BULB_TO_MONO(u8Bulb));
+        }
     }
     DriverBulb_vSetOnOff(u8Bulb, bOn);
+    if (u32ComputedWhiteMode != COMPUTED_WHITE_NONE)
+	{
+    	/* Turn on/off associated computed white bulb */
+    	DriverBulb_vSetOnOff(RGB_BULB_TO_MONO(u8Bulb), bOn);
+	}
 }
 
 /****************************************************************************

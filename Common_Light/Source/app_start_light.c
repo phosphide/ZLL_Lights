@@ -56,12 +56,14 @@
 
 #include "appapi.h"
 #include "zpr_light_node.h"
+#include "app_zcl_light_task.h"
 
 
 #include "zcl_options.h"
 
 #include "app_common.h"
 #include "app_light_interpolation.h"
+#include "app_light_calibration.h"
 
 #include "DriverBulb.h"
 
@@ -191,13 +193,28 @@ PUBLIC void vAppMain(void)
 
     /* Early call to Bulb initialisation to enable fast start up    */
 
-     DriverBulb_vInit();
+    DriverBulb_vInit();
 
     /* Bulb is now on 100% white (RGB or Mono) so ensure the LI     */
     /*  module's values are consistent with this initial state      */
 	for (i = 0; i < NUM_BULBS; i++)
 	{
-		vLI_SetCurrentValues(i, CLD_LEVELCONTROL_MAX_LEVEL, 255, 255, 255, 4000);
+		/* If in computed white mode favoring better color, don't switch on
+		 * RGB lights. Just switch on white lights, as white lights will
+		 * have a better CRI than the equivalent RGB lights. */
+		bool bIsRGB = (i >= NUM_MONO_LIGHTS);
+		if (bIsRGB && (u32ComputedWhiteMode == COMPUTED_WHITE_BETTER_COLOR))
+		{
+			vLI_SetCurrentValues(i, 0, 0, 0, 0, 4000);
+			DriverBulb_vOff(i);
+		}
+		else
+		{
+			vLI_SetCurrentValues(i, CLD_LEVELCONTROL_MAX_LEVEL, 255, 255, 255, 4000);
+			DriverBulb_vOn(i);
+		}
+		vLI_UpdateDriver(i);
+		DriverBulb_vOutput(i);
 	}
 
     g_u8ZpsExpiryMaxCount = 1;

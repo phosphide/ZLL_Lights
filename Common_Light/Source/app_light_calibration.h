@@ -43,6 +43,15 @@
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
 
+/* Computed white mode disabled */
+#define COMPUTED_WHITE_NONE					0
+/* Computed white mode which more faithfully reproduces color, at the expense
+ * of overall brightness */
+#define COMPUTED_WHITE_BETTER_COLOR			1
+/* Computed white mode which results in brighter whites, at the expense
+ * of color reproduction */
+#define COMPUTED_WHITE_BETTER_BRIGHTNESS	2
+
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
