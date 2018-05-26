@@ -53,7 +53,7 @@ def generate_log_table(n, name):
 
 log_table_long = generate_log_table(4096, "log_table_long")
 
-log_table_short = generate_log_table(256, "log_table_short")
+log_table_short = generate_log_table(255, "log_table_short")
 
 f.close()
 
@@ -83,7 +83,7 @@ average_error = 0.0
 num_measurements = 0
 for j in range(20, 500): # Try gamma values between 0.2 and 5.0
     gamma = float(j) / 100.0
-    for i in range(1, 256):
+    for i in range(1, 255):
         # Do calculation using tables
         x = log_table_short[i]
         # Simulate fixed-point arithmetic
@@ -92,7 +92,7 @@ for j in range(20, 500): # Try gamma values between 0.2 and 5.0
         x = x // 1024
         y = antilog(x)
         # Do calculation using math.pow
-        actual_y = math.pow(float(i) / 255.0, gamma) * 4095.0
+        actual_y = math.pow(float(i) / 254.0, gamma) * 4095.0
         # Compare
         err = abs(y - actual_y)
         average_error += err

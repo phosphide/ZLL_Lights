@@ -273,6 +273,8 @@ PUBLIC uint32 u32LC_AdjustIntensity(uint8 u8Intensity, uint8 u8ChannelNum)
 
 	if (u8Intensity == 0)
 		return 0;
+	if (u8Intensity > 254)
+		u8Intensity = 254;
 	y = log_table_short[u8Intensity];
 	y = y * u32Gamma;
 	y = (y >> 10) + ((y & 512) >> 9); /* round */
