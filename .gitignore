@@ -1,0 +1,7 @@
+# kicad backup files
+Hardware/Standard/*.bak
+Hardware/Standard/*.kicad_pcb-bak
+Hardware/Standard/*.bck
+Hardware/Mini/*.bak
+Hardware/Mini/*.kicad_pcb-bak
+Hardware/Mini/*.bck
