@@ -317,7 +317,7 @@ OS_TASK(Tick_Task)
     {
         eZLL_Update100mS();
         u32Tick10ms = 0;
-        /* Also check that board isn't overheating */
+        /* Also check whether board is overheating */
         if (!bOverheat && (i16TS_GetTemperature() > TEMPERATURE_OVERHEAT_CUTOFF))
         {
         	bOverheat = TRUE;

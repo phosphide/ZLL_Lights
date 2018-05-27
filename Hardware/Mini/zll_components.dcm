@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP MCP1402
+D Tiny 500 mA, High-Speed Power MOSFET Driver
+K gate driver
+F http://www.microchip.com/mymicrochip/filehandler.aspx?ddocname=en530890
+$ENDCMP
+#
+#End Doc Library
