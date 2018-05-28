@@ -382,6 +382,21 @@ PUBLIC void DriverBulb_vOutput(uint8 u8Bulb)
 
 }
 
+/****************************************************************************
+ * NAME: APP_isrTimer1
+ *
+ * DESCRIPTION:
+ * ISR for Timer1
+ ****************************************************************************/
+OS_ISR(APP_isrTimer1)
+{
+	/* Clear interrupt source */
+	u8AHI_TimerFired(E_AHI_TIMER_1);
+
+	/* This doesn't do anything, but it needs to be here otherwise there
+	 * will be an undefined reference error. */
+}
+
 /****************************************************************************/
 /***        Local Functions                                               ***/
 /****************************************************************************/
