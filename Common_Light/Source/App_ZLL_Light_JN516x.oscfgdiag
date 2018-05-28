@@ -17,6 +17,7 @@
         <ISRs xmi:type="oscfg:ISR" xmi:id="_8lTFEDpQEd6X1p7n01EMHA" name="APP_isrTickTimer" IPL="12" type="controlled" ISRSource="_BvTr0DpREd6X1p7n01EMHA"/>
         <ISRs xmi:type="oscfg:ISR" xmi:id="_FDw_UEZUEeisJKxJ_mlNyg" name="APP_isrUart" IPL="5" type="controlled" ISRSource="_DyvcUEZUEeisJKxJ_mlNyg"/>
         <ISRs xmi:type="oscfg:ISR" xmi:id="_m1HrAFEKEeiCIKVenSbVRQ" name="APP_isrAdc" IPL="6" type="controlled" ISRSource="_pnrSMFEKEeiCIKVenSbVRQ"/>
+        <ISRs xmi:type="oscfg:ISR" xmi:id="_p2d0UGKeEeidOeZCDv5QsQ" name="APP_isrTimer1" IPL="8" type="controlled" ISRSource="_nsMVIGKeEeidOeZCDv5QsQ"/>
         <Messages xmi:type="oscfg:Message" xmi:id="_JBf7EDrVEd6X1p7n01EMHA" name="APP_msgZpsEvents" ctype="ZPS_tsAfEvent" queue="8" Notifies="_x9JOoDrUEd6X1p7n01EMHA"/>
         <Messages xmi:type="oscfg:Message" xmi:id="_5GqlEFtMEd6qH6QyWDvQeQ" name="APP_msgEvents" ctype="APP_tsLightEvent" queue="8" Notifies="_x9JOoDrUEd6X1p7n01EMHA"/>
         <Messages xmi:type="oscfg:Message" xmi:id="_dzNRgLGcEd6awJvEGNtQBw" name="APP_msgZpsEvents_ZCL" ctype="ZPS_tsAfEvent" queue="8" Notifies="_AbUVALGdEd6awJvEGNtQBw"/>
@@ -32,6 +33,7 @@
         <InterruptSources xmi:type="oscfg:InterruptSource" xmi:id="_BvTr0DpREd6X1p7n01EMHA" source="TickTimer" SourceISR="_8lTFEDpQEd6X1p7n01EMHA"/>
         <InterruptSources xmi:type="oscfg:InterruptSource" xmi:id="_DyvcUEZUEeisJKxJ_mlNyg" source="UART0" SourceISR="_FDw_UEZUEeisJKxJ_mlNyg"/>
         <InterruptSources xmi:type="oscfg:InterruptSource" xmi:id="_pnrSMFEKEeiCIKVenSbVRQ" source="AnaloguePeripheral" SourceISR="_m1HrAFEKEeiCIKVenSbVRQ"/>
+        <InterruptSources xmi:type="oscfg:InterruptSource" xmi:id="_nsMVIGKeEeidOeZCDv5QsQ" source="Timer1" SourceISR="_p2d0UGKeEeidOeZCDv5QsQ"/>
         <CooperativeTaskGroups xmi:type="oscfg:CooperativeGroup" xmi:id="_M_HbUKsqEeGSvtyb-5HJpA" name="AllTasks">
           <CooperativeTasks xmi:type="oscfg:Task" xmi:id="_iq-kwL9fEeCwcYOBFX6I-g" name="APP_CommissionTimerTask" PostMessage="_xoEPIL9fEeCwcYOBFX6I-g" autostarted="false" priority="250"/>
           <CooperativeTasks xmi:type="oscfg:Task" xmi:id="_GM3I4L9gEeCwcYOBFX6I-g" name="APP_Commission_Task" CollectMessage="_xoEPIL9fEeCwcYOBFX6I-g" EnterExitMutex="_98PuEDpJEd6X1p7n01EMHA _DhAXIDpKEd6X1p7n01EMHA _F6f-EDpKEd6X1p7n01EMHA" autostarted="false" priority="190"/>
@@ -252,6 +254,18 @@
               <children xmi:type="notation:DecorationNode" xmi:id="_pnrSNFEKEeiCIKVenSbVRQ" visible="true" type="5031"/>
               <styles xmi:type="notation:DescriptionStyle" xmi:id="_pnrSMlEKEeiCIKVenSbVRQ" description=""/>
               <layoutConstraint xmi:type="notation:Bounds" xmi:id="_pnrSM1EKEeiCIKVenSbVRQ" x="943" y="845" width="-1" height="-1"/>
+            </children>
+            <children xmi:type="notation:Node" xmi:id="_nuD9YGKeEeidOeZCDv5QsQ" visible="true" type="3016" element="_nsMVIGKeEeidOeZCDv5QsQ">
+              <children xmi:type="notation:DecorationNode" xmi:id="_nuD9Y2KeEeidOeZCDv5QsQ" visible="true" type="5031"/>
+              <styles xmi:type="notation:DescriptionStyle" xmi:id="_nuD9YWKeEeidOeZCDv5QsQ" description=""/>
+              <layoutConstraint xmi:type="notation:Bounds" xmi:id="_nuD9YmKeEeidOeZCDv5QsQ" x="1035" y="678" width="-1" height="-1"/>
+            </children>
+            <children xmi:type="notation:Node" xmi:id="_p2d0UWKeEeidOeZCDv5QsQ" visible="true" type="3011" element="_p2d0UGKeEeidOeZCDv5QsQ">
+              <children xmi:type="notation:DecorationNode" xmi:id="_p2d0VGKeEeidOeZCDv5QsQ" visible="true" type="5022"/>
+              <children xmi:type="notation:DecorationNode" xmi:id="_p2d0VWKeEeidOeZCDv5QsQ" visible="true" type="5023"/>
+              <children xmi:type="notation:DecorationNode" xmi:id="_p2d0VmKeEeidOeZCDv5QsQ" visible="true" type="5024"/>
+              <styles xmi:type="notation:DescriptionStyle" xmi:id="_p2d0UmKeEeidOeZCDv5QsQ" description=""/>
+              <layoutConstraint xmi:type="notation:Bounds" xmi:id="_p2d0U2KeEeidOeZCDv5QsQ" x="1321" y="629" width="-1" height="-1"/>
             </children>
             <styles xmi:type="notation:SortingStyle" xmi:id="_UoRIJjpMEd6X1p7n01EMHA" sorting="None"/>
             <styles xmi:type="notation:FilteringStyle" xmi:id="_UoRIJzpMEd6X1p7n01EMHA" filtering="None"/>
@@ -971,6 +985,16 @@
       <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_x4bnclEKEeiCIKVenSbVRQ" points="[29, -2, -130, 0]$[141, -4, -18, -2]"/>
       <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_x4bndVEKEeiCIKVenSbVRQ" id="(0.8933823529411765,0.5)"/>
       <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_x4bndlEKEeiCIKVenSbVRQ" id="(0.13953488372093023,0.4444444444444444)"/>
+    </edges>
+    <edges xmi:type="notation:Edge" xmi:id="_wp9hYGKeEeidOeZCDv5QsQ" visible="true" type="4011" source="_nuD9YGKeEeidOeZCDv5QsQ" target="_p2d0UWKeEeidOeZCDv5QsQ">
+      <children xmi:type="notation:DecorationNode" xmi:id="_wp9hY2KeEeidOeZCDv5QsQ" visible="true" type="6011">
+        <layoutConstraint xmi:type="notation:Location" xmi:id="_wp9hZGKeEeidOeZCDv5QsQ" x="0" y="40"/>
+      </children>
+      <styles xmi:type="notation:RoutingStyle" xmi:id="_wp9hYWKeEeidOeZCDv5QsQ" roundedBendpointsRadius="0" routing="Manual" smoothness="None" avoidObstructions="false" closestDistance="false" jumpLinkStatus="None" jumpLinkType="Semicircle" jumpLinksReverse="false"/>
+      <element xsi:nil="true"/>
+      <bendpoints xmi:type="notation:RelativeBendpoints" xmi:id="_wp9hYmKeEeidOeZCDv5QsQ" points="[16, -2, -126, 9]$[115, -4, -27, 7]"/>
+      <sourceAnchor xmi:type="notation:IdentityAnchor" xmi:id="_wp9hZWKeEeidOeZCDv5QsQ" id="(0.9144385026737968,0.55)"/>
+      <targetAnchor xmi:type="notation:IdentityAnchor" xmi:id="_wp9hZmKeEeidOeZCDv5QsQ" id="(0.18120805369127516,0.6805555555555556)"/>
     </edges>
   </notation:Diagram>
 </xmi:XMI>

@@ -50,13 +50,18 @@ extern "C" {
 #define NUM_BULBS		    ((NUM_MONO_LIGHTS) + (NUM_RGB_LIGHTS))
 #define BULB_NUM_MONO(x)	((x))
 #define BULB_NUM_RGB(x)		((x) + (NUM_MONO_LIGHTS))
+
+#if ((defined VARIANT) && (VARIANT==Mini))
+/* This isn't 4 because one timer channel is used as a phase timer */
+#define NUM_CHANNELS		5
+#else
 #define NUM_CHANNELS		12
+#endif
 
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
 
-enum {E_RED_PWM,E_GREEN_PWM,E_BLUE_PWM};
 /****************************************************************************/
 /***        Public Function Prototypes                                    ***/
 /****************************************************************************/

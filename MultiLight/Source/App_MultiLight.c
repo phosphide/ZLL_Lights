@@ -88,6 +88,28 @@ tsIdentifyColour sIdEffectRGB[NUM_RGB_LIGHTS];
 /***        Local Variables                                               ***/
 /****************************************************************************/
 
+#if ((defined VARIANT) && (VARIANT==Mini))
+PRIVATE tsCLD_ZllDeviceTable sDeviceTable =
+	{NUM_MONO_LIGHTS + NUM_RGB_LIGHTS,
+		{
+			{0,
+			 ZLL_PROFILE_ID,
+			 DIMMABLE_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_MONO_1_ENDPOINT,
+			 2,
+			 3,
+			 0},
+
+			{0,
+			 ZLL_PROFILE_ID,
+			 COLOUR_LIGHT_DEVICE_ID,
+			 MULTILIGHT_LIGHT_RGB_1_ENDPOINT,
+			 2,
+			 3,
+			 3}
+		}
+	};
+#else
 PRIVATE tsCLD_ZllDeviceTable sDeviceTable =
 	{NUM_MONO_LIGHTS + NUM_RGB_LIGHTS,
 		{
@@ -140,6 +162,7 @@ PRIVATE tsCLD_ZllDeviceTable sDeviceTable =
 			 5}
 		}
 	};
+#endif
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -398,6 +421,11 @@ PUBLIC void vAPP_ZCL_DeviceSpecific_Init(void)
 
 	/* Load device-specific calibration values from NVM */
 	vLC_LoadCalibrationFromNVM();
+	/* Update bulb levels based on calibrations values */
+	for (i = 0; i < NUM_BULBS; i++)
+	{
+		DriverBulb_vOutput((uint8)i);
+	}
 }
 
 /****************************************************************************

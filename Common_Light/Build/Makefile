@@ -65,7 +65,11 @@ else
 DR ?= JN516X_WHITE
 endif
 
+ifeq ($(VARIANT),Mini)
+$(info Target: $(TARGET), DriverBulb_TimerPWM.c)
+else
 $(info Target: $(TARGET), DriverBulb_PCA9685.c)
+endif
 
 ifeq ($(DR), DR1175)
 JENNIC_PCB ?= DEVKIT4
@@ -220,7 +224,11 @@ APPSRC += appZpsBeaconHandler.c
 
 #Light device type and it's associated driver 
 APPSRC += App_$(TARGET).c
+ifeq ($(VARIANT),Mini)
+APPSRC += DriverBulb_TimerPWM.c
+else
 APPSRC += DriverBulb_PCA9685.c
+endif
 
 CFLAGS +=-D$(DR)
 CFLAGS += -DEMBEDDED
