@@ -44,7 +44,7 @@
 /***        Constants                                                     ***/
 /****************************************************************************/
 
-#if ((defined VARIANT) && (VARIANT==Mini))
+#ifdef VARIANT_MINI
 #define NUM_MONO_LIGHTS		1
 #define NUM_RGB_LIGHTS		1
 #else

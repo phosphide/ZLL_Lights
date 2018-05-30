@@ -51,7 +51,7 @@ extern "C" {
 #define BULB_NUM_MONO(x)	((x))
 #define BULB_NUM_RGB(x)		((x) + (NUM_MONO_LIGHTS))
 
-#if ((defined VARIANT) && (VARIANT==Mini))
+#ifdef VARIANT_MINI
 /* This isn't 4 because one timer channel is used as a phase timer */
 #define NUM_CHANNELS		5
 #else

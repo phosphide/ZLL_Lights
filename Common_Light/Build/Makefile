@@ -89,6 +89,11 @@ CFLAGS  += -D$(DR)
 
 # Tell the code which variant we're compiling for
 CFLAGS  += -DVARIANT=$(VARIANT)
+ifeq ($(VARIANT),Mini)
+CFLAGS  += -DVARIANT_MINI
+else
+CFLAGS  += -DVARIANT_STANDARD
+endif
 
 ###############################################################################
 # Select the network stack (e.g. MAC, ZBPro, SE, HA)

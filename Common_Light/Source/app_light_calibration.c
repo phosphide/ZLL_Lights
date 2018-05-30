@@ -125,7 +125,7 @@ PRIVATE char acCurrentLine[MAX_LINE_SIZE + 1]; // + 1 for null
 PRIVATE unsigned int uCurrentLineSize;
 PRIVATE uint32 u32NewComputedWhiteMode;
 
-#if ((defined VARIANT) && (VARIANT==Mini))
+#ifdef VARIANT_MINI
 /* Map of bulbs to JN5168 Timer channels. */
 PRIVATE const uint8 au8ChannelMap[NUM_BULBS * 3] = {
 		4,   255, 255,  /* W1 */

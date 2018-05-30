@@ -88,7 +88,7 @@ tsIdentifyColour sIdEffectRGB[NUM_RGB_LIGHTS];
 /***        Local Variables                                               ***/
 /****************************************************************************/
 
-#if ((defined VARIANT) && (VARIANT==Mini))
+#ifdef VARIANT_MINI
 PRIVATE tsCLD_ZllDeviceTable sDeviceTable =
 	{NUM_MONO_LIGHTS + NUM_RGB_LIGHTS,
 		{
