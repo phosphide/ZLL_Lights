@@ -4,7 +4,9 @@ Use 38400 baud, 8 data bits, no parity, 1 stop bit. All commands should be termi
 
 ### Get version
 Command format: ```v```
+
 Command response: ```<version string>```
+
 Example:
 ```
 v\r\n
@@ -15,7 +17,9 @@ This gets the firmware variant and build date. The first two words will be "Mult
 
 ### Get temperature
 Command format: ```t```
+
 Command response: ```<temperature>```
+
 Example:
 ```
 t\r\n
@@ -25,7 +29,9 @@ This gets the board temperature, in degrees Celsius.
 
 ### Get raw channel names
 Command format: ```n```
+
 Command response: ```Comma-separated list of <channel>=<name>```
+
 Example:
 ```
 n\r\n
@@ -35,7 +41,9 @@ The firmware internally uses raw channel numbers, which are integers starting fr
 
 ### Set brightness
 Command format: ```b <channel mask> <brightness>```
+
 Command response: ```Comma-separated list of <channel>:brightness=<value>```
+
 Example:
 ```
 b 224 990\r\n
@@ -51,7 +59,9 @@ The default setting for brightness is 1024 (relative brightness 1.0).
 
 ### Set gamma
 Command format: ```g <channel mask> <gamma>```
+
 Command response: ```Comma-separated list of <channel>:gamma=<value>```
+
 Example:
 ```
 g 2052 2253\r\n
@@ -67,7 +77,9 @@ The default setting for gamma is 2867 (gamma = 2.8).
 
 ### Set computed white mode
 Command format: ```w <computed white mode>```
+
 Command response: ```ComputedWhiteMode=<computed white mode>```
+
 Example:
 ```
 w 1\r\n
@@ -84,7 +96,9 @@ When computed white mode is active, the white channels will become a part of the
 
 ### Save settings
 Command format: ```s```
+
 Command response: ```saving```
+
 Example:
 ```
 s\r\n
@@ -94,7 +108,9 @@ This will save gamma, brightness and computed white settings to non-volatile mem
 
 ### Reset
 Command format: ```r```
+
 Command response: ```[no response]```
+
 Example:
 ```
 r\r\n
@@ -103,7 +119,9 @@ This will soft-reset the JN5168 immediately. A reset is necessary for the comput
 
 ### Get all information
 Command format: ```i```
+
 Command response: ```Comma-separated list of <property>=<value>```
+
 Example:
 ```
 i\r\n
