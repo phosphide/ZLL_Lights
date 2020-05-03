@@ -65,6 +65,8 @@
 
 #include "DriverBulb_Shim.h"
 
+#include "uart.h"
+
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
 /****************************************************************************/
@@ -186,6 +188,8 @@ PUBLIC void vAppMain(void)
 #endif
 
      DBG_vUartInit(DBG_E_UART_0, DBG_E_UART_BAUD_RATE_115200);
+
+     UART_init();
 
     /* Early call to Bulb initialisation to enable fast start up    */
 

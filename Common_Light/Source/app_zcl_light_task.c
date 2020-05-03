@@ -176,7 +176,13 @@ PUBLIC void APP_ZCL_vInitialise(void)
 #endif
 
     #ifdef CLD_LEVEL_CONTROL
-        sLight.sLevelControlServerCluster.u8CurrentLevel = 0xFE;
+        sLight.sLevelControlServerCluster.u8CurrentLevel = 200; // 0xFE HURRAY
+//        sLight.sLevelControlServerCluster.u8CurrentLevel = 106;
+//        sLight.sColourControlServerCluster.u16CurrentX = 16035;
+//        sLight.sColourControlServerCluster.u16CurrentY = 14560;
+//        sLight.sColourControlServerCluster.u8CurrentHue = 167;
+//        sLight.sColourControlServerCluster.u8CurrentSaturation = 164;
+//        sLight.sColourControlServerCluster.u16EnhancedCurrentHue = 42851;
     #endif
 
     sLight.sOnOffServerCluster.bOnOff = TRUE;

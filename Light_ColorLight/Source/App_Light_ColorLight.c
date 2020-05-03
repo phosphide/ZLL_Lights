@@ -48,6 +48,7 @@
 #include "app_light_interpolation.h"
 #include "DriverBulb_Shim.h"
 
+#include "uart.h"
 
 
 #ifdef DEBUG_LIGHT_TASK
@@ -434,6 +435,11 @@ PUBLIC void vStartEffect(uint8 u8Effect) {
 
 PUBLIC void vRGBLight_SetLevels(bool_t bOn, uint8 u8Level, uint8 u8Red, uint8 u8Green, uint8 u8Blue)
 {
+	DBG_vPrintf(TRUE, "App_Light_ColorLight::vRGBLight_SetLevels(%d, %d, %d, %d, %d)\n",
+			u8Level, u8Red, u8Green, u8Blue); // derp
+
+	UART_send_state(&sLight);
+
     if (bOn == TRUE)
     {
     	vLI_Start(u8Level, u8Red, u8Green, u8Blue, 0);

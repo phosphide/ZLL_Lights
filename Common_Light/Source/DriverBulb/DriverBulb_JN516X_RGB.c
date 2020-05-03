@@ -78,7 +78,7 @@ PRIVATE void DriverBulb_vOutput(void);
 /***        Local Variables                                               ***/
 /****************************************************************************/
 PRIVATE bool_t  bIsOn      	 	= FALSE;
-PRIVATE uint8   u8CurrLevel 	= 255;
+PRIVATE uint8   u8CurrLevel 	= 150; //derp
 
 PRIVATE uint8   u8CurrRed       = PWM_COUNT_MAX;
 PRIVATE uint8   u8CurrGreen     = PWM_COUNT_MAX;
@@ -359,6 +359,8 @@ PRIVATE void DriverBulb_vOutput(void)
 		u8Green = 0;
 		u8Blue  = 0;
 	}
+
+	//DBG_vPrintf(TRUE, "DriverBulb_vOutput(): R %d G %d B %d\n", u8Red, u8Green, u8Blue); // derp
 
 	/* Set RGB channel levels */
 	vAHI_TimerStartRepeat(PWM_TIMER_RED,   (PWM_COUNT_MAX - u8Red  ), PWM_COUNT_MAX);
